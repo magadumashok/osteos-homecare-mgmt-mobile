@@ -1,0 +1,21 @@
+node_modules/
+.expo/
+dist/
+web-build/
+android/
+ios/
+*.log
+.env
+.env.*
+
+# Firebase config is per environment
+google-services.json
+GoogleService-Info.plist
+
+# Signing
+*.jks
+*.keystore
+*.p8
+*.p12
+*.key
+*.mobileprovision
