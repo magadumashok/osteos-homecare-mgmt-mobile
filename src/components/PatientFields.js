@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import DateField from "./DateField";
 import { TextField } from "./Form";
 import { FilterChips } from "./Segmented";
 import SelectField from "./SelectField";
@@ -23,6 +22,7 @@ export const BLANK_PATIENT = {
   nationality: "",
   insurance_name: "",
   weight: "",
+  state: "",
   address: "",
   source_of_contact: "",
   service_package: "",
@@ -41,10 +41,13 @@ export function patientPayload(form) {
   return out;
 }
 
-/** The patient registration fields (shared by register, edit and walk-in). */
+/**
+ * The patient registration fields (shared by register, edit and walk-in).
+ * Date of birth, weight, nationality, ID number and insurance are no longer
+ * asked for (matches the web form); existing values are kept on edit.
+ */
 export default function PatientFields({ form, onChange, isEdit = false }) {
   const countries = useReference("countriesByCode");
-  const nationalities = useReference("nationalities");
   const [packages, setPackages] = useState([]);
   const set = (key) => (value) => onChange({ ...form, [key]: value });
 
@@ -67,19 +70,9 @@ export default function PatientFields({ form, onChange, isEdit = false }) {
       <TextField label="Email" value={form.email || ""} onChangeText={set("email")} keyboardType="email-address" autoCapitalize="none" />
       <Text style={styles.label}>Gender</Text>
       <FilterChips options={GENDERS} value={String(form.gender || "").toLowerCase()} onChange={set("gender")} />
-      <View style={styles.row}>
-        <View style={styles.flex}>
-          <TextField label="Age" value={String(form.age ?? "")} onChangeText={set("age")} keyboardType="number-pad" />
-        </View>
-        <View style={styles.flex}>
-          <TextField label="Weight (kg)" value={String(form.weight ?? "")} onChangeText={set("weight")} keyboardType="decimal-pad" />
-        </View>
-      </View>
-      <DateField label="Date of birth" value={form.date_of_birth} onChange={set("date_of_birth")} maximumDate={new Date()} placeholder="Optional" />
-      <TextField label="ID number" value={form.id_no || ""} onChangeText={set("id_no")} />
-      <SelectField label="Nationality" value={form.nationality} options={nationalities} onChange={set("nationality")} allowClear />
-      <TextField label="Insurance" value={form.insurance_name || ""} onChangeText={set("insurance_name")} />
-      <TextField label="Address" value={form.address || ""} onChangeText={set("address")} multiline />
+      <TextField label="Age" value={String(form.age ?? "")} onChangeText={set("age")} keyboardType="number-pad" />
+      <TextField label="State / area" value={form.state || ""} onChangeText={set("state")} />
+      <TextField label="Address (used for directions)" value={form.address || ""} onChangeText={set("address")} multiline />
       <Text style={styles.label}>Source of contact</Text>
       <FilterChips options={SOURCES} value={form.source_of_contact} onChange={set("source_of_contact")} />
       <SelectField
@@ -102,7 +95,5 @@ export default function PatientFields({ form, onChange, isEdit = false }) {
 
 const styles = StyleSheet.create({
   wrap: { gap: 14 },
-  flex: { flex: 1 },
-  row: { flexDirection: "row", gap: 12 },
   label: { color: colors.textBody, fontSize: 14, fontWeight: "600" },
 });

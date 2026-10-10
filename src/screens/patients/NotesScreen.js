@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Alert,
@@ -284,22 +284,51 @@ function AudioRecorderBar({ saving, onSave }) {
   const preview = useAudioPlayer(null);
   const previewStatus = useAudioPlayerStatus(preview);
 
+  // The recorder state is polled, so a quick second tap would otherwise
+  // prepare the recorder twice, which the native module rejects.
+  const busy = useRef(false);
+  const [starting, setStarting] = useState(false);
+
   const start = async () => {
-    const permission = await requestRecordingPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("Microphone needed", "Allow microphone access in Settings to record audio notes.");
-      return;
+    if (busy.current) return;
+    busy.current = true;
+    setStarting(true);
+    try {
+      const permission = await requestRecordingPermissionsAsync();
+      if (!permission.granted) {
+        Alert.alert("Microphone needed", "Allow microphone access in Settings to record audio notes.");
+        return;
+      }
+      preview.pause();
+      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
+      const status = recorder.getStatus();
+      if (status.isRecording) return;
+      // A session left prepared (e.g. a failed earlier start) is reused rather than prepared again.
+      if (!status.canRecord) await recorder.prepareToRecordAsync();
+      recorder.record();
+    } catch (e) {
+      Alert.alert("Could not start recording", e?.message || "Please try again.");
+      await recorder.stop().catch(() => {});
+      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false }).catch(() => {});
+    } finally {
+      busy.current = false;
+      setStarting(false);
     }
-    await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: true });
-    await recorder.prepareToRecordAsync();
-    recorder.record();
   };
 
   const stop = async () => {
-    await recorder.stop();
-    await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false });
-    setRecordedUri(recorder.uri);
-    if (recorder.uri) preview.replace({ uri: recorder.uri });
+    if (busy.current) return;
+    busy.current = true;
+    try {
+      await recorder.stop();
+      setRecordedUri(recorder.uri);
+      if (recorder.uri) preview.replace({ uri: recorder.uri });
+    } catch (e) {
+      Alert.alert("Could not stop recording", e?.message || "Please record again.");
+    } finally {
+      await setAudioModeAsync({ playsInSilentMode: true, allowsRecording: false }).catch(() => {});
+      busy.current = false;
+    }
   };
 
   const discard = () => {
@@ -352,8 +381,8 @@ function AudioRecorderBar({ saving, onSave }) {
 
   return (
     <View style={styles.composer}>
-      <Pressable onPress={start} style={styles.wideButton}>
-        <Ionicons name="mic" size={20} color={colors.onPrimary} />
+      <Pressable onPress={start} disabled={starting} style={[styles.wideButton, starting && styles.disabled]}>
+        {starting ? <ActivityIndicator color={colors.onPrimary} /> : <Ionicons name="mic" size={20} color={colors.onPrimary} />}
         <Text style={styles.wideButtonText}>Record audio note</Text>
       </Pressable>
     </View>
