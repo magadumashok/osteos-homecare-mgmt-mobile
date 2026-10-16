@@ -6,7 +6,11 @@ import { StatusBar } from "expo-status-bar";
 import { Provider, useSelector } from "react-redux";
 import AppNavigator from "./navigation/AppNavigator";
 import { store } from "./store";
-import { listenForNotifications, registerForPushNotifications } from "./utils/pushNotifications";
+import {
+  listenForNotifications,
+  listenForTokenRefresh,
+  registerForPushNotifications,
+} from "./utils/pushNotifications";
 import { isSafeRoomUrl, joinRoom } from "./utils/videoCall";
 
 /** Registers for pushes once signed in and shows messages that arrive while open. */
@@ -14,7 +18,9 @@ function PushNotifications() {
   const username = useSelector((s) => s.auth.user?.username);
 
   useEffect(() => {
-    if (username) registerForPushNotifications();
+    if (!username) return undefined;
+    registerForPushNotifications();
+    return listenForTokenRefresh();
   }, [username]);
 
   useEffect(

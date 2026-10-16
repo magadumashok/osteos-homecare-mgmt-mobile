@@ -49,6 +49,15 @@ export async function registerForPushNotifications() {
   }
 }
 
+/** Firebase can rotate a device's token; save the new one. Returns an unsubscribe function. */
+export function listenForTokenRefresh() {
+  const fb = firebase();
+  if (!fb) return () => {};
+  return fb.onTokenRefresh(fb.getMessaging(), (token) => {
+    updateFirebaseToken(token).catch((error) => console.warn("Push token update failed:", error?.message || error));
+  });
+}
+
 /** Foreground messages and notification taps. Returns an unsubscribe function. */
 export function listenForNotifications({ onForeground, onOpened }) {
   const fb = firebase();

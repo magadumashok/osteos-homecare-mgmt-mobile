@@ -33,6 +33,7 @@ export default function LoginScreen({ navigation }) {
   const [otp, setOtp] = useState("");
   const [notice, setNotice] = useState(null);
   const [localError, setLocalError] = useState(null);
+  const [focused, setFocused] = useState(null);
   const otpRefs = useRef([]);
 
   const shownError = localError || error;
@@ -88,26 +89,43 @@ export default function LoginScreen({ navigation }) {
     resetMessages();
   };
 
+  const fieldStyle = (name) => [
+    styles.inputWrap,
+    { minHeight: responsive.controlHeight },
+    focused === name && styles.inputWrapFocused,
+  ];
+  const iconColor = (name) => (focused === name ? colors.primaryDark : colors.textFaint);
+
   const mobileInput = (
-    <View style={[styles.inputWrap, { minHeight: responsive.controlHeight }]}>
-      <Ionicons name="call-outline" size={20} color={colors.primaryDark} />
-      <TextInput
-        keyboardType="phone-pad"
-        autoComplete="tel"
-        maxLength={15}
-        value={mobile}
-        onChangeText={(v) => {
-          setMobile(v);
-          resetMessages();
-        }}
-        placeholder="Mobile number"
-        placeholderTextColor={colors.textFaint}
-        style={styles.input}
-        editable={!loading}
-        accessibilityLabel="Mobile number"
-      />
+    <View style={styles.field}>
+      <Text style={styles.label}>Mobile number</Text>
+      <View style={fieldStyle("mobile")}>
+        <Ionicons name="call-outline" size={20} color={iconColor("mobile")} />
+        <TextInput
+          keyboardType="phone-pad"
+          autoComplete="tel"
+          maxLength={15}
+          value={mobile}
+          onChangeText={(v) => {
+            setMobile(v);
+            resetMessages();
+          }}
+          onFocus={() => setFocused("mobile")}
+          onBlur={() => setFocused(null)}
+          placeholder="Enter your mobile number"
+          placeholderTextColor={colors.textFaint}
+          style={styles.input}
+          editable={!loading}
+          accessibilityLabel="Mobile number"
+        />
+      </View>
     </View>
   );
+
+  const title = otpStep ? "Verify your number" : "Welcome back";
+  const subtitle = otpStep
+    ? `Enter the 6-digit code sent to ${cleanMobile(mobile)}`
+    : "Sign in to continue to your account";
 
   return (
     <LinearGradient
@@ -117,12 +135,33 @@ export default function LoginScreen({ navigation }) {
       end={{ x: 1, y: 1 }}
       style={styles.flex}
     >
+      {/* Soft decorative shapes behind the content */}
+      <View pointerEvents="none" style={[styles.blob, styles.blobTop]} />
+      <View pointerEvents="none" style={[styles.blob, styles.blobBottom]} />
+
       <ScreenContainer keyboardAware backgroundColor="transparent">
         <View style={styles.layout}>
+          <View style={styles.hero}>
+            <Image
+              resizeMode="contain"
+              source={require("../../../assets/osteos-logo.png")}
+              style={[styles.logo, responsive.isTablet && styles.logoTablet]}
+            />
+            <View style={styles.brandPill}>
+              <Ionicons name="medkit-outline" size={14} color={colors.onPrimary} />
+              <Text style={styles.brandText}>Homecare</Text>
+            </View>
+          </View>
+
           <View style={[styles.card, { padding: responsive.cardPadding + 4 }]}>
-            <View style={styles.logoWrap}>
-              <Image resizeMode="contain" source={require("../../../assets/icon.png")} style={styles.logo} />
-              <Text style={styles.brand}>Homecare</Text>
+            <View style={styles.cardHeader}>
+              {otpStep && (
+                <View style={styles.headerIcon}>
+                  <Ionicons name="shield-checkmark-outline" size={26} color={colors.primaryDark} />
+                </View>
+              )}
+              <Text style={styles.heading}>{title}</Text>
+              <Text style={styles.subheading}>{subtitle}</Text>
             </View>
 
             {!otpStep && (
@@ -140,10 +179,10 @@ export default function LoginScreen({ navigation }) {
                       <Ionicons
                         name={t === TABS.OTP ? "phone-portrait-outline" : "lock-closed-outline"}
                         size={16}
-                        color={active ? colors.onPrimary : colors.primaryDark}
+                        color={active ? colors.primaryDark : colors.textMuted}
                       />
                       <Text style={[styles.tabText, active && styles.tabTextActive]}>
-                        {t === TABS.OTP ? "Login with OTP" : "Login with Password"}
+                        {t === TABS.OTP ? "OTP" : "Password"}
                       </Text>
                     </Pressable>
                   );
@@ -153,89 +192,125 @@ export default function LoginScreen({ navigation }) {
 
             <View style={styles.form}>
               <ErrorBanner message={shownError} />
-              {!!notice && !shownError && <Text style={styles.notice}>{notice}</Text>}
+              {!!notice && !shownError && (
+                <View style={styles.noticeBox}>
+                  <Ionicons name="checkmark-circle" size={18} color={colors.success} />
+                  <Text style={styles.notice}>{notice}</Text>
+                </View>
+              )}
 
               {tab === TABS.PASSWORD && (
                 <>
-                  <Text style={styles.heading}>Login</Text>
                   {mobileInput}
-                  <View style={[styles.inputWrap, { minHeight: responsive.controlHeight }]}>
-                    <Ionicons name="key-outline" size={20} color={colors.primaryDark} />
-                    <TextInput
-                      secureTextEntry={!showPassword}
-                      autoCapitalize="none"
-                      value={password}
-                      onChangeText={(v) => {
-                        setPassword(v);
-                        resetMessages();
-                      }}
-                      placeholder="Password"
-                      placeholderTextColor={colors.textFaint}
-                      style={styles.input}
-                      editable={!loading}
-                      onSubmitEditing={onPasswordLogin}
-                      accessibilityLabel="Password"
-                    />
-                    <Pressable onPress={() => setShowPassword((v) => !v)} hitSlop={10}>
-                      <Ionicons
-                        name={showPassword ? "eye-off-outline" : "eye-outline"}
-                        size={20}
-                        color={colors.textMuted}
+                  <View style={styles.field}>
+                    <View style={styles.labelRow}>
+                      <Text style={styles.label}>Password</Text>
+                      <Pressable
+                        onPress={() => {
+                          resetMessages();
+                          navigation.navigate("ForgotPassword", { mobile: cleanMobile(mobile) });
+                        }}
+                        hitSlop={8}
+                      >
+                        <Text style={styles.link}>Forgot password?</Text>
+                      </Pressable>
+                    </View>
+                    <View style={fieldStyle("password")}>
+                      <Ionicons name="lock-closed-outline" size={20} color={iconColor("password")} />
+                      <TextInput
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        value={password}
+                        onChangeText={(v) => {
+                          setPassword(v);
+                          resetMessages();
+                        }}
+                        onFocus={() => setFocused("password")}
+                        onBlur={() => setFocused(null)}
+                        placeholder="Enter your password"
+                        placeholderTextColor={colors.textFaint}
+                        style={styles.input}
+                        editable={!loading}
+                        onSubmitEditing={onPasswordLogin}
+                        accessibilityLabel="Password"
                       />
-                    </Pressable>
+                      <Pressable
+                        onPress={() => setShowPassword((v) => !v)}
+                        hitSlop={10}
+                        accessibilityLabel={showPassword ? "Hide password" : "Show password"}
+                      >
+                        <Ionicons
+                          name={showPassword ? "eye-off-outline" : "eye-outline"}
+                          size={20}
+                          color={colors.textMuted}
+                        />
+                      </Pressable>
+                    </View>
                   </View>
-                  <PrimaryButton title="Login" icon="log-in-outline" loading={loading} onPress={onPasswordLogin} />
-                  <Pressable
-                    onPress={() => {
-                      resetMessages();
-                      navigation.navigate("ForgotPassword", { mobile: cleanMobile(mobile) });
-                    }}
-                    style={styles.linkCenter}
-                  >
-                    <Text style={styles.link}>Forgot password?</Text>
-                  </Pressable>
+                  <PrimaryButton
+                    title="Sign in"
+                    icon="log-in-outline"
+                    loading={loading}
+                    onPress={onPasswordLogin}
+                    style={styles.submit}
+                  />
                 </>
               )}
 
               {tab === TABS.OTP && !otpStep && (
                 <>
-                  <Text style={styles.heading}>Login</Text>
                   {mobileInput}
-                  <Text style={styles.hint}>We'll text a 6-digit code to this number.</Text>
-                  <PrimaryButton title="Send code" icon="paper-plane-outline" loading={loading} onPress={onSendOtp} />
+                  <View style={styles.hintRow}>
+                    <Ionicons name="information-circle-outline" size={16} color={colors.textMuted} />
+                    <Text style={styles.hint}>We'll text a 6-digit code to this number.</Text>
+                  </View>
+                  <PrimaryButton
+                    title="Send code"
+                    icon="paper-plane-outline"
+                    loading={loading}
+                    onPress={onSendOtp}
+                    style={styles.submit}
+                  />
                 </>
               )}
 
               {tab === TABS.OTP && otpStep && (
                 <>
-                  <Text style={styles.heading}>Enter code</Text>
-                  <Text style={styles.hint}>Sent to {cleanMobile(mobile)}</Text>
                   <OtpInput value={otp} onChange={setOtp} editable={!loading} refs={otpRefs} />
                   <PrimaryButton
-                    title="Verify & login"
+                    title="Verify & sign in"
                     icon="checkmark-circle-outline"
                     loading={loading}
                     onPress={onVerifyOtp}
+                    style={styles.submit}
                   />
                   <View style={styles.linkRow}>
-                    <Pressable onPress={onSendOtp} disabled={loading}>
-                      <Text style={styles.link}>Resend code</Text>
-                    </Pressable>
                     <Pressable
                       onPress={() => {
                         setOtpStep(false);
                         resetMessages();
                       }}
                       disabled={loading}
+                      style={styles.linkButton}
+                      hitSlop={8}
                     >
+                      <Ionicons name="arrow-back" size={16} color={colors.primaryDark} />
                       <Text style={styles.link}>Change number</Text>
+                    </Pressable>
+                    <Pressable onPress={onSendOtp} disabled={loading} style={styles.linkButton} hitSlop={8}>
+                      <Ionicons name="refresh" size={16} color={colors.primaryDark} />
+                      <Text style={styles.link}>Resend code</Text>
                     </Pressable>
                   </View>
                 </>
               )}
             </View>
           </View>
-          <Text style={styles.footer}>Powered by Osteos.io</Text>
+
+          <View style={styles.footer}>
+            <Ionicons name="lock-closed" size={12} color={colors.onPrimaryMuted} />
+            <Text style={styles.footerText}>Secure login · Powered by Osteos.io</Text>
+          </View>
         </View>
       </ScreenContainer>
     </LinearGradient>
@@ -244,58 +319,111 @@ export default function LoginScreen({ navigation }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
-  layout: { gap: 14 },
+  layout: { gap: 20, width: "100%", maxWidth: 460, alignSelf: "center" },
+
+  blob: { position: "absolute", borderRadius: 999, backgroundColor: "rgba(255,255,255,0.06)" },
+  blobTop: { width: 320, height: 320, top: -120, right: -100 },
+  blobBottom: { width: 260, height: 260, bottom: -90, left: -110 },
+
+  hero: { alignItems: "center", gap: 14, paddingTop: 8 },
+  logo: { width: 210, height: 104 },
+  logoTablet: { width: 260, height: 128 },
+  brandPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 6,
+    borderRadius: 999,
+    backgroundColor: colors.onPrimaryGlass,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.25)",
+  },
+  brandText: { color: colors.onPrimary, fontSize: 13, fontWeight: "700", letterSpacing: 1.2, textTransform: "uppercase" },
+
   card: {
     backgroundColor: colors.surface,
-    borderRadius: 30,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
-    elevation: 12,
+    borderRadius: 28,
+    shadowColor: "#001c26",
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.25,
+    shadowRadius: 24,
+    elevation: 14,
   },
-  logoWrap: { alignItems: "center", marginBottom: 16, gap: 6 },
-  logo: { width: 84, height: 84 },
-  brand: { fontSize: 22, fontWeight: "800", color: colors.primaryDark },
+  cardHeader: { marginBottom: 14, gap: 4 },
+  headerIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 16,
+    backgroundColor: colors.primarySoft,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 2,
+  },
+  heading: { color: colors.text, fontSize: 22, fontWeight: "800" },
+  subheading: { color: colors.textMuted, fontSize: 14, lineHeight: 20 },
 
   tabRow: {
     flexDirection: "row",
-    borderRadius: 30,
-    borderWidth: 1,
-    borderColor: colors.primaryDark,
-    overflow: "hidden",
-    marginBottom: 18,
+    padding: 4,
+    borderRadius: 14,
+    backgroundColor: "#f1f5f9",
+    marginBottom: 14,
   },
   tab: {
     flex: 1,
-    height: 40,
+    height: 38,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     gap: 6,
-    backgroundColor: colors.surface,
+    borderRadius: 11,
   },
-  tabActive: { backgroundColor: colors.primaryDark },
-  tabText: { fontSize: 12, fontWeight: "600", color: colors.primaryDark },
-  tabTextActive: { color: colors.onPrimary },
+  tabActive: {
+    backgroundColor: colors.surface,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.08,
+    shadowRadius: 6,
+    elevation: 2,
+  },
+  tabText: { fontSize: 14, fontWeight: "600", color: colors.textMuted },
+  tabTextActive: { color: colors.primaryDark, fontWeight: "700" },
 
-  form: { gap: 14 },
-  heading: { color: colors.text, fontSize: 20, fontWeight: "800" },
+  form: { gap: 12 },
+  field: { gap: 6 },
+  labelRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
+  label: { color: colors.textBody, fontSize: 13, fontWeight: "700" },
   inputWrap: {
     flexDirection: "row",
     alignItems: "center",
     gap: 10,
     borderWidth: 1.5,
-    borderColor: colors.primaryDark,
-    borderRadius: 16,
-    paddingHorizontal: 12,
-    backgroundColor: colors.surface,
+    borderColor: "#e5e7eb",
+    borderRadius: 14,
+    paddingHorizontal: 14,
+    backgroundColor: "#f9fafb",
   },
-  input: { flex: 1, color: colors.text, fontSize: 16, fontWeight: "600", paddingVertical: 8 },
-  hint: { color: colors.textMuted, fontSize: 14 },
-  notice: { color: colors.success, fontSize: 13 },
-  linkCenter: { alignItems: "center", paddingVertical: 4 },
+  inputWrapFocused: { borderColor: colors.primaryDark, backgroundColor: colors.surface },
+  input: { flex: 1, color: colors.text, fontSize: 16, fontWeight: "500", paddingVertical: 8 },
+
+  hintRow: { flexDirection: "row", alignItems: "center", gap: 6, marginTop: -6 },
+  hint: { flex: 1, color: colors.textMuted, fontSize: 13 },
+  noticeBox: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    padding: 12,
+    borderRadius: 12,
+    backgroundColor: "#ecfdf3",
+  },
+  notice: { flex: 1, color: colors.success, fontSize: 13, fontWeight: "500" },
+
+  submit: { marginTop: 2, borderRadius: 14 },
   linkRow: { flexDirection: "row", justifyContent: "space-between" },
-  link: { color: "#0b5a79", fontSize: 14, fontWeight: "600" },
-  footer: { color: colors.onPrimary, fontSize: 12, fontWeight: "500", textAlign: "center", paddingVertical: 12 },
+  linkButton: { flexDirection: "row", alignItems: "center", gap: 4 },
+  link: { color: colors.primaryDark, fontSize: 13, fontWeight: "700" },
+
+  footer: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 8 },
+  footerText: { color: colors.onPrimaryMuted, fontSize: 12, fontWeight: "500" },
 });

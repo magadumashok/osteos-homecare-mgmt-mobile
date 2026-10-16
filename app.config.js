@@ -20,7 +20,7 @@ module.exports = {
     splash: {
       image: "./assets/splash-icon.png",
       resizeMode: "contain",
-      backgroundColor: "#ffffff",
+      backgroundColor: "#005f7f",
     },
     ios: {
       supportsTablet: true,
@@ -37,7 +37,7 @@ module.exports = {
       edgeToEdgeEnabled: true,
       adaptiveIcon: {
         foregroundImage: "./assets/adaptive-icon.png",
-        backgroundColor: "#ffffff",
+        backgroundColor: "#005f7f",
       },
       permissions: [
         "android.permission.CAMERA",
