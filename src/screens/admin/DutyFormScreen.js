@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import KeyboardAwareView from "../../components/KeyboardAwareView";
 import AppScreen from "../../components/AppScreen";
 import DateField from "../../components/DateField";
 import { ErrorBanner, PrimaryButton } from "../../components/Form";
@@ -115,7 +116,7 @@ export default function DutyFormScreen({ navigation, route }) {
 
   return (
     <AppScreen title={isEdit ? "Reschedule Duty" : "Schedule Duty"} subtitle={isEdit ? existing.patient_name : undefined}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAwareView style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           {!isEdit && <SelectField label="Patient *" value={form.patient_id} options={patients} onChange={set("patient_id")} />}
           <SelectField
@@ -168,7 +169,7 @@ export default function DutyFormScreen({ navigation, route }) {
           <ErrorBanner message={error} />
           <PrimaryButton title={isEdit ? "Reschedule" : "Schedule"} icon="checkmark" loading={saving} onPress={save} />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareView>
     </AppScreen>
   );
 }

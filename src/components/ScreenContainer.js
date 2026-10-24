@@ -1,6 +1,7 @@
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from "react-native";
+import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useResponsiveLayout } from "../utils/responsive";
+import KeyboardAwareView from "./KeyboardAwareView";
 
 /** Centered, width-capped content for the login-style screens. */
 export default function ScreenContainer({
@@ -11,6 +12,8 @@ export default function ScreenContainer({
   keyboardAware = false,
 }) {
   const responsive = useResponsiveLayout();
+
+  const Body = keyboardAware ? KeyboardAwareView : View;
 
   const content = (
     <View
@@ -26,10 +29,7 @@ export default function ScreenContainer({
 
   return (
     <SafeAreaView style={[styles.flex, { backgroundColor }]}>
-      <KeyboardAvoidingView
-        behavior={keyboardAware && Platform.OS === "ios" ? "padding" : undefined}
-        style={styles.flex}
-      >
+      <Body style={styles.flex}>
         {scrollEnabled ? (
           <ScrollView
             bounces={false}
@@ -42,7 +42,7 @@ export default function ScreenContainer({
         ) : (
           <View style={[styles.flex, centered && styles.centered]}>{content}</View>
         )}
-      </KeyboardAvoidingView>
+      </Body>
     </SafeAreaView>
   );
 }

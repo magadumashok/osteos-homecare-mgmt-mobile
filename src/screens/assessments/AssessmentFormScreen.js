@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import KeyboardAwareView from "../../components/KeyboardAwareView";
 import { Ionicons } from "@expo/vector-icons";
 import AppScreen from "../../components/AppScreen";
 import DateField from "../../components/DateField";
@@ -200,7 +201,7 @@ export default function AssessmentFormScreen({ navigation, route }) {
 
   return (
     <AppScreen title={isEdit ? form.patient_name || "Assessment" : "Initial Assessment"} subtitle={isEdit ? "Edit assessment" : `Lead #${leadId}`}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAwareView style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <Section title="Patient">
             <TextField label="Patient name *" value={form.patient_name} onChangeText={set("patient_name")} />
@@ -287,7 +288,7 @@ export default function AssessmentFormScreen({ navigation, route }) {
           <ErrorBanner message={error} />
           <PrimaryButton title={isEdit ? "Save changes" : "Save assessment"} icon="checkmark" loading={saving} onPress={save} />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareView>
     </AppScreen>
   );
 }

@@ -2,9 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
   Image,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -13,10 +11,12 @@ import {
   TextInput,
   View,
 } from "react-native";
+import KeyboardAwareView from "../../components/KeyboardAwareView";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
 import AppScreen from "../../components/AppScreen";
+import BottomBar from "../../components/BottomBar";
 import DateField from "../../components/DateField";
 import { ErrorBanner, PrimaryButton } from "../../components/Form";
 import Segmented, { FilterChips } from "../../components/Segmented";
@@ -143,13 +143,13 @@ export default function PrescriptionsScreen({ route }) {
         />
       )}
       {canWrite && (
-        <View style={styles.footer}>
+        <BottomBar>
           <PrimaryButton
             title={type === "medicine" ? "Write prescription" : "Request tests"}
             icon="create-outline"
             onPress={() => setWriting(true)}
           />
-        </View>
+        </BottomBar>
       )}
       <PrescriptionDetail type={type} id={openId} onClose={() => setOpenId(null)} />
     </AppScreen>
@@ -250,7 +250,7 @@ function PrescriptionForm({ username, type, onCancel, onSaved }) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAwareView style={styles.flex}>
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <DateField label="Date" value={date} onChange={setDate} />
 
@@ -326,7 +326,7 @@ function PrescriptionForm({ username, type, onCancel, onSaved }) {
           <PrimaryButton title="Save" icon="checkmark" loading={saving} onPress={save} style={styles.flex} />
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAwareView>
   );
 }
 
@@ -341,7 +341,6 @@ const styles = StyleSheet.create({
   cardCount: { fontSize: 12, color: colors.textMuted },
   line: { fontSize: 14, color: colors.text },
   lineMeta: { fontSize: 12, color: colors.textMuted },
-  footer: { padding: 16, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.borderSoft },
 
   detailSafe: { flex: 1, backgroundColor: colors.background },
   detailHeader: {

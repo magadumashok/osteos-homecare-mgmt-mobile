@@ -4,9 +4,13 @@ const path = require("path");
 // Firebase config files are per environment and not committed. Push
 // notifications are enabled only when they are present.
 const googleServicesFile = "./google-services.json";
-const hasGoogleServices = fs.existsSync(path.join(__dirname, googleServicesFile));
+const hasGoogleServices = fs.existsSync(
+  path.join(__dirname, googleServicesFile),
+);
 const googleServiceInfoPlist = "./GoogleService-Info.plist";
-const hasGoogleServiceInfo = fs.existsSync(path.join(__dirname, googleServiceInfoPlist));
+const hasGoogleServiceInfo = fs.existsSync(
+  path.join(__dirname, googleServiceInfoPlist),
+);
 
 module.exports = {
   expo: {
@@ -25,9 +29,12 @@ module.exports = {
     ios: {
       supportsTablet: true,
       bundleIdentifier: "com.osteos.homecare",
-      ...(hasGoogleServiceInfo ? { googleServicesFile: googleServiceInfoPlist } : {}),
+      ...(hasGoogleServiceInfo
+        ? { googleServicesFile: googleServiceInfoPlist }
+        : {}),
       infoPlist: {
-        NSMicrophoneUsageDescription: "Allow Homecare to record audio notes for your patients.",
+        NSMicrophoneUsageDescription:
+          "Allow Homecare to record audio notes for your patients.",
       },
     },
     android: {
@@ -53,20 +60,24 @@ module.exports = {
       [
         "expo-image-picker",
         {
-          cameraPermission: "Allow Homecare to use your camera to photograph notes and documents.",
-          photosPermission: "Allow Homecare to access your photos to upload notes and documents.",
+          cameraPermission:
+            "Allow Homecare to use your camera to photograph notes and documents.",
+          photosPermission:
+            "Allow Homecare to access your photos to upload notes and documents.",
         },
       ],
       [
         "expo-location",
         {
-          locationWhenInUsePermission: "Allow Homecare to record where you sign in and out of your duties.",
+          locationWhenInUsePermission:
+            "Allow Homecare to record where you sign in and out of your duties.",
         },
       ],
       [
         "expo-audio",
         {
-          microphonePermission: "Allow Homecare to record audio notes for your patients.",
+          microphonePermission:
+            "Allow Homecare to record audio notes for your patients.",
         },
       ],
       ...(hasGoogleServices || hasGoogleServiceInfo
@@ -75,7 +86,9 @@ module.exports = {
     ],
     extra: {
       // Override per build: API_BASE_URL=https://... npx expo run:android
-      apiBaseUrl: process.env.API_BASE_URL || "http://10.0.2.2:8000/api/v1",
+      // apiBaseUrl: process.env.API_BASE_URL || "http://10.0.2.2:8000/api/v1",
+      apiBaseUrl:
+        "https://homecare.osteos.io/api/v1" || "http://10.0.2.2:8000/api/v1",
       pushEnabled: hasGoogleServices || hasGoogleServiceInfo,
     },
   },

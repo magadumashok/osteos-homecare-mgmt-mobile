@@ -84,7 +84,9 @@ export default function AssessmentsScreen({ navigation }) {
           refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => load("refresh")} colors={[colors.primary]} />}
           ListHeaderComponent={<Text style={styles.count}>{shown.length} assessments</Text>}
           ListEmptyComponent={
-            <EmptyState icon="clipboard-outline" title="No assessments" subtitle="Start one from a lead on the Patient Leads screen." />
+            // Patient Leads is hidden for now, so its hint is too:
+            // <EmptyState icon="clipboard-outline" title="No assessments" subtitle="Start one from a lead on the Patient Leads screen." />
+            <EmptyState icon="clipboard-outline" title="No assessments" />
           }
           renderItem={({ item }) => (
             <ListCard

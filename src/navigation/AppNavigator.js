@@ -28,8 +28,9 @@ import MySignatureScreen from "../screens/home/MySignatureScreen";
 import PatientFormScreen from "../screens/patients/PatientFormScreen";
 import DischargeListScreen from "../screens/patients/DischargeListScreen";
 
-import LeadsScreen from "../screens/leads/LeadsScreen";
-import LeadFormScreen from "../screens/leads/LeadFormScreen";
+// Patient Leads is not needed for now (see the "leads" module in modules.js).
+// import LeadsScreen from "../screens/leads/LeadsScreen";
+// import LeadFormScreen from "../screens/leads/LeadFormScreen";
 import AssessmentsScreen from "../screens/assessments/AssessmentsScreen";
 import AssessmentFormScreen from "../screens/assessments/AssessmentFormScreen";
 
@@ -80,8 +81,10 @@ function MainStack() {
       <Stack.Screen name="PatientForm" component={PatientFormScreen} />
       <Stack.Screen name="DischargeList" component={DischargeListScreen} />
 
+      {/* Patient Leads is not needed for now.
       <Stack.Screen name="Leads" component={LeadsScreen} />
       <Stack.Screen name="LeadForm" component={LeadFormScreen} />
+      */}
       <Stack.Screen name="Assessments" component={AssessmentsScreen} />
       <Stack.Screen name="AssessmentForm" component={AssessmentFormScreen} />
 

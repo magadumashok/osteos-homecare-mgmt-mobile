@@ -61,15 +61,17 @@ export const DASHBOARD_MODULES = [
     permissions: ["patients.walkin"],
     screen: "WalkIn",
   },
-  {
-    id: "leads",
-    title: "Patient Leads",
-    subtitle: "Enquiries and follow-ups",
-    icon: "person-add",
-    palette: "purple",
-    permissions: ["leads.view"],
-    screen: "Leads",
-  },
+  // Patient Leads is not needed for now; uncomment to bring it back
+  // (with the Leads / LeadForm routes in AppNavigator.js).
+  // {
+  //   id: "leads",
+  //   title: "Patient Leads",
+  //   subtitle: "Enquiries and follow-ups",
+  //   icon: "person-add",
+  //   palette: "purple",
+  //   permissions: ["leads.view"],
+  //   screen: "Leads",
+  // },
   {
     id: "assessments",
     title: "Assessments",

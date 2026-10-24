@@ -2,9 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import {
   Alert,
   FlatList,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   RefreshControl,
   ScrollView,
@@ -12,9 +10,11 @@ import {
   Text,
   View,
 } from "react-native";
+import KeyboardAwareView from "../../components/KeyboardAwareView";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 import AppScreen from "../../components/AppScreen";
+import BottomBar from "../../components/BottomBar";
 import DateField from "../../components/DateField";
 import { ErrorBanner, PrimaryButton, TextField } from "../../components/Form";
 import Segmented, { FilterChips } from "../../components/Segmented";
@@ -230,7 +230,7 @@ function AdministerSheet({ username, date, giving, onClose, onDone }) {
 
   return (
     <Modal visible transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAwareView style={styles.flex}>
         <Pressable style={styles.backdrop} onPress={onClose} />
         <View style={styles.sheet}>
           <Text style={styles.sheetTitle}>
@@ -259,7 +259,7 @@ function AdministerSheet({ username, date, giving, onClose, onDone }) {
             <PrimaryButton title="Mark given" icon="checkmark" loading={saving} onPress={submit} style={styles.flex} />
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAwareView>
       <SignaturePad
         visible={padOpen}
         title="Guardian signature"
@@ -336,9 +336,9 @@ function Schedule({ username, canAdd }) {
         />
       )}
       {canAdd && (
-        <View style={styles.footer}>
+        <BottomBar>
           <PrimaryButton title="Add medicine" icon="add-circle-outline" onPress={() => setAdding(true)} />
-        </View>
+        </BottomBar>
       )}
     </View>
   );
@@ -393,7 +393,7 @@ function AddMedicationForm({ username, onCancel, onSaved }) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAwareView style={styles.flex}>
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <TextField label="Medicine name *" value={form.medicine_name} onChangeText={set("medicine_name")} placeholder="e.g. Paracetamol" />
         <TextField label="Dose *" value={form.dosage} onChangeText={set("dosage")} keyboardType="decimal-pad" placeholder="e.g. 500" />
@@ -413,7 +413,7 @@ function AddMedicationForm({ username, onCancel, onSaved }) {
           <PrimaryButton title="Save" icon="checkmark" loading={saving} onPress={save} style={styles.flex} />
         </View>
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAwareView>
   );
 }
 
@@ -444,7 +444,6 @@ const styles = StyleSheet.create({
   sessionLabel: { fontSize: 11, fontWeight: "700", color: colors.primary },
   sessionLabelGiven: { color: colors.success },
   sessionBy: { fontSize: 10, color: colors.textMuted, textAlign: "center" },
-  footer: { padding: 16, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.borderSoft },
   form: { padding: 16, paddingBottom: 40, gap: 14 },
   row: { flexDirection: "row", gap: 12 },
   label: { color: colors.textBody, fontSize: 14, fontWeight: "600" },

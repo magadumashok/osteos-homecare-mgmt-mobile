@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { Modal, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import KeyboardAwareView from "./KeyboardAwareView";
 import { colors } from "../theme";
 import { ErrorBanner, PrimaryButton } from "./Form";
 
@@ -22,7 +23,7 @@ export default function NotAttendedModal({ visible, onClose, onSubmit }) {
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAwareView style={styles.flex}>
         <Pressable style={styles.backdrop} onPress={onClose} />
         <View style={styles.sheet}>
           <Text style={styles.title}>Can't attend this duty</Text>
@@ -49,7 +50,7 @@ export default function NotAttendedModal({ visible, onClose, onSubmit }) {
             <PrimaryButton title="Submit" onPress={submit} style={styles.flex} />
           </View>
         </View>
-      </KeyboardAvoidingView>
+      </KeyboardAwareView>
     </Modal>
   );
 }

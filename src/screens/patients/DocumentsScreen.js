@@ -16,6 +16,7 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 import AppScreen, { HeaderIconButton } from "../../components/AppScreen";
+import BottomBar from "../../components/BottomBar";
 import { PrimaryButton } from "../../components/Form";
 import ImageViewer from "../../components/ImageViewer";
 import Segmented from "../../components/Segmented";
@@ -218,14 +219,14 @@ export default function DocumentsScreen({ route }) {
       )}
 
       {canUpload && (
-        <View style={styles.footer}>
+        <BottomBar>
           <PrimaryButton
             title={field === "specimen_images" ? "Add specimen photos" : field === "emirates_id" ? "Upload ID" : "Upload report"}
             icon="cloud-upload-outline"
             loading={uploading}
             onPress={onAdd}
           />
-        </View>
+        </BottomBar>
       )}
 
       <ImageViewer uri={viewing?.url} caption={viewing?.caption} onClose={() => setViewing(null)} />
@@ -302,7 +303,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  footer: { padding: 16, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.borderSoft },
   backdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.35)" },
   sheet: { backgroundColor: colors.surface, borderTopLeftRadius: 24, borderTopRightRadius: 24, padding: 20, paddingBottom: 34, gap: 12 },
   sheetTitle: { fontSize: 18, fontWeight: "700", color: colors.text },

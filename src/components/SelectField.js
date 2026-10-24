@@ -8,7 +8,7 @@ import { colors, radius } from "../theme";
  * Dropdown for long lists (countries, staff, nationalities). Opens a
  * searchable full-screen list. options: [{ value, label, sub? }]
  */
-export default function SelectField({ label, value, options, onChange, placeholder = "Select", allowClear = false }) {
+export default function SelectField({ label, value, options, onChange, placeholder = "Select", allowClear = false, disabled = false }) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
 
@@ -27,7 +27,14 @@ export default function SelectField({ label, value, options, onChange, placehold
   return (
     <View style={styles.group}>
       {!!label && <Text style={styles.label}>{label}</Text>}
-      <Pressable onPress={() => setOpen(true)} style={styles.field} accessibilityRole="button" accessibilityLabel={label}>
+      <Pressable
+        onPress={() => setOpen(true)}
+        disabled={disabled}
+        style={[styles.field, disabled && styles.fieldDisabled]}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        accessibilityState={{ disabled }}
+      >
         <Text style={[styles.value, !selected && !value && styles.placeholder]} numberOfLines={1}>
           {selected?.label || value || placeholder}
         </Text>
@@ -102,6 +109,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     backgroundColor: colors.surface,
   },
+  fieldDisabled: { backgroundColor: colors.background, opacity: 0.6 },
   value: { fontSize: 16, color: colors.text, flex: 1 },
   placeholder: { color: colors.textFaint },
   sheet: { flex: 1, backgroundColor: colors.background },

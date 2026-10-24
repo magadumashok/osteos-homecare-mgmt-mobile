@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import KeyboardAwareView from "../../components/KeyboardAwareView";
 import { useSelector } from "react-redux";
 import AppScreen from "../../components/AppScreen";
 import DateField from "../../components/DateField";
@@ -59,7 +60,7 @@ export default function WalkInScreen({ navigation }) {
 
   return (
     <AppScreen title="Walk-in">
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAwareView style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <View style={styles.card}>
             <Text style={styles.cardTitle}>Visit</Text>
@@ -79,7 +80,7 @@ export default function WalkInScreen({ navigation }) {
           <ErrorBanner message={error} />
           <PrimaryButton title="Register walk-in" icon="checkmark" loading={saving} onPress={save} />
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareView>
     </AppScreen>
   );
 }

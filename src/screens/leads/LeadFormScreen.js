@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import KeyboardAwareView from "../../components/KeyboardAwareView";
 import { useSelector } from "react-redux";
 import AppScreen from "../../components/AppScreen";
 import DateField from "../../components/DateField";
@@ -104,7 +105,7 @@ export default function LeadFormScreen({ navigation, route }) {
 
   return (
     <AppScreen title={isEdit ? form.patient_name || "Lead" : "New Lead"} subtitle={isEdit ? `Lead #${leadId}` : undefined}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <KeyboardAwareView style={styles.flex}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
           <TextField label="Patient name *" value={form.patient_name} onChangeText={set("patient_name")} editable={canManage} />
           <SelectField label="Country *" value={form.country} options={countries} onChange={set("country")} />
@@ -146,7 +147,7 @@ export default function LeadFormScreen({ navigation, route }) {
             />
           )}
         </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareView>
     </AppScreen>
   );
 }

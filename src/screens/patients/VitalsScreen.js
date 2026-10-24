@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { Alert, FlatList, KeyboardAvoidingView, Platform, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, FlatList, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import KeyboardAwareView from "../../components/KeyboardAwareView";
 import { useSelector } from "react-redux";
 import AppScreen from "../../components/AppScreen";
 import DateField from "../../components/DateField";
@@ -111,7 +112,7 @@ function RecordForm({ username, onSaved }) {
   };
 
   return (
-    <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+    <KeyboardAwareView style={styles.flex}>
       <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
         <View style={styles.row}>
           <DateField label="Date" value={date} onChange={setDate} maximumDate={new Date()} />
@@ -145,7 +146,7 @@ function RecordForm({ username, onSaved }) {
         <ErrorBanner message={error} />
         <PrimaryButton title="Save vital signs" icon="checkmark-circle-outline" loading={saving} onPress={save} />
       </ScrollView>
-    </KeyboardAvoidingView>
+    </KeyboardAwareView>
   );
 }
 

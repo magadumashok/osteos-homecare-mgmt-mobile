@@ -4,9 +4,7 @@ import {
   Alert,
   FlatList,
   Image,
-  KeyboardAvoidingView,
   Modal,
-  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -16,6 +14,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   RecordingPresets,
   requestRecordingPermissionsAsync,
@@ -27,6 +26,7 @@ import {
 } from "expo-audio";
 import { File } from "expo-file-system";
 import AppScreen from "../../components/AppScreen";
+import useKeyboardOverlap from "../../hooks/useKeyboardOverlap";
 import { EmptyState, ErrorState, LoadingView } from "../../components/States";
 import { addAudioNote, addImageNote, addTextNote, listNotes } from "../../services/patientService";
 import { capitalize, formatDateTime } from "../../utils/format";
@@ -60,6 +60,8 @@ export default function NotesScreen({ route }) {
   const [saving, setSaving] = useState(false);
   const [text, setText] = useState("");
   const [viewing, setViewing] = useState(null);
+  const insets = useSafeAreaInsets();
+  const [bodyRef, keyboardOverlap] = useKeyboardOverlap();
 
   const load = useCallback(
     async (mode = "load") => {
@@ -109,7 +111,7 @@ export default function NotesScreen({ route }) {
 
   return (
     <AppScreen title="Notes" subtitle={name || username}>
-      <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+      <View ref={bodyRef} style={[styles.flex, styles.column]}>
         <View style={styles.tabs}>
           {TABS.map((t) => {
             const active = t.type === tab;
@@ -205,12 +207,15 @@ export default function NotesScreen({ route }) {
         )}
 
         {canWrite && tab === "audio_notes" && <AudioRecorderBar saving={saving} onSave={onSaveAudio} />}
-      </KeyboardAvoidingView>
+
+        {/* Keeps the note bar above the keyboard, or above the system navigation bar. */}
+        <View style={{ height: keyboardOverlap || insets.bottom, backgroundColor: canWrite ? colors.surface : "transparent" }} />
+      </View>
 
       <Modal visible={!!viewing} transparent animationType="fade" onRequestClose={() => setViewing(null)}>
         <Pressable style={styles.viewer} onPress={() => setViewing(null)}>
           {!!viewing && <Image source={{ uri: viewing }} style={styles.viewerImage} resizeMode="contain" />}
-          <Ionicons name="close" size={30} color="#fff" style={styles.viewerClose} />
+          <Ionicons name="close" size={30} color="#fff" style={[styles.viewerClose, { top: insets.top + 12 }]} />
         </Pressable>
       </Modal>
     </AppScreen>
@@ -391,6 +396,8 @@ function AudioRecorderBar({ saving, onSave }) {
 
 const styles = StyleSheet.create({
   flex: { flex: 1 },
+  // On tablets the notes, tabs and note bar stay at a readable width.
+  column: { width: "100%", maxWidth: 760, alignSelf: "center" },
   tabs: {
     flexDirection: "row",
     margin: 16,
@@ -412,7 +419,8 @@ const styles = StyleSheet.create({
   noteAuthor: { fontSize: 13, fontWeight: "700", color: colors.primary, flexShrink: 1 },
   noteDate: { fontSize: 12, color: colors.textFaint },
   noteText: { fontSize: 15, color: colors.text, lineHeight: 21 },
-  noteImage: { width: "100%", height: 200, borderRadius: 10, backgroundColor: colors.primarySoft },
+  // Scales with the card, so photos are not a thin strip on tablets.
+  noteImage: { width: "100%", aspectRatio: 16 / 10, maxHeight: 420, borderRadius: 10, backgroundColor: colors.primarySoft },
   audioNote: { flexDirection: "row", alignItems: "center", gap: 12 },
 
   composer: {
@@ -420,7 +428,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
     gap: 10,
     padding: 12,
-    paddingBottom: Platform.OS === "ios" ? 28 : 12,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.borderSoft,
@@ -472,5 +479,5 @@ const styles = StyleSheet.create({
 
   viewer: { flex: 1, backgroundColor: "rgba(0,0,0,0.92)", alignItems: "center", justifyContent: "center" },
   viewerImage: { width: "100%", height: "80%" },
-  viewerClose: { position: "absolute", top: 50, right: 20 },
+  viewerClose: { position: "absolute", right: 20 },
 });

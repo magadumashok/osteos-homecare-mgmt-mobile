@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import KeyboardAwareView from "../../components/KeyboardAwareView";
 import { Ionicons } from "@expo/vector-icons";
 import AppScreen from "../../components/AppScreen";
 import { ErrorBanner, PrimaryButton } from "../../components/Form";
@@ -72,7 +73,7 @@ export default function ServicePackageScreen({ navigation, route }) {
       {!packages ? (
         <LoadingView label="Loading services…" />
       ) : (
-        <KeyboardAvoidingView style={styles.flex} behavior={Platform.OS === "ios" ? "padding" : undefined}>
+        <KeyboardAwareView style={styles.flex}>
           <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
             <Text style={styles.hint}>Tick the services given on this visit. Fees can be adjusted.</Text>
             <View style={styles.list}>
@@ -108,7 +109,7 @@ export default function ServicePackageScreen({ navigation, route }) {
             <ErrorBanner message={error} />
             <PrimaryButton title="Save services" icon="checkmark" loading={saving} onPress={save} />
           </ScrollView>
-        </KeyboardAvoidingView>
+        </KeyboardAwareView>
       )}
     </AppScreen>
   );
