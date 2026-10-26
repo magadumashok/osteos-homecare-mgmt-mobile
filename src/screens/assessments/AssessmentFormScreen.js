@@ -10,7 +10,6 @@ import SelectField from "../../components/SelectField";
 import { LoadingView } from "../../components/States";
 import useReference from "../../hooks/useReference";
 import { createAssessment, getAssessment, getLead, updateAssessment } from "../../services/leadService";
-import { icdCodes } from "../../services/referenceService";
 import { SERVICES, invoiceTotals } from "../../utils/invoice";
 import { colors, shadow } from "../../theme";
 
@@ -95,54 +94,6 @@ function SmallInput({ label, value, onChangeText, numeric }) {
   );
 }
 
-/** ICD search that also accepts free text. */
-function DiagnosisField({ value, onChange }) {
-  const [options, setOptions] = useState([]);
-  const [focused, setFocused] = useState(false);
-
-  useEffect(() => {
-    const text = String(value || "").trim();
-    if (!focused || text.length < 2) {
-      setOptions([]);
-      return undefined;
-    }
-    const t = setTimeout(() => icdCodes(text).then((list) => setOptions((list || []).slice(0, 8)), () => setOptions([])), 300);
-    return () => clearTimeout(t);
-  }, [value, focused]);
-
-  return (
-    <View style={styles.diagnosis}>
-      <TextField
-        label="Diagnosis (search ICD codes)"
-        value={value}
-        onChangeText={onChange}
-        onFocus={() => setFocused(true)}
-        onBlur={() => setTimeout(() => setFocused(false), 200)}
-        placeholder="Type at least 2 letters"
-      />
-      {options.length > 0 && (
-        <View style={styles.suggestions}>
-          {options.map((option) => (
-            <Pressable
-              key={option}
-              onPress={() => {
-                onChange(option);
-                setOptions([]);
-                setFocused(false);
-              }}
-              style={styles.suggestion}
-            >
-              <Text style={styles.suggestionText} numberOfLines={2}>
-                {option}
-              </Text>
-            </Pressable>
-          ))}
-        </View>
-      )}
-    </View>
-  );
-}
-
 /** Record a lead's initial assessment (leadId) or edit one (assessmentId). */
 export default function AssessmentFormScreen({ navigation, route }) {
   const { leadId, assessmentId } = route.params || {};
@@ -222,7 +173,7 @@ export default function AssessmentFormScreen({ navigation, route }) {
 
           <Section title="Assessment">
             <TextField label="Referring physician" value={form.physician || ""} onChangeText={set("physician")} />
-            <DiagnosisField value={form.diagnosis_name || ""} onChange={set("diagnosis_name")} />
+            <TextField label="Diagnosis" value={form.diagnosis_name || ""} onChangeText={set("diagnosis_name")} />
             <TextField label="Physical assessment" value={form.physical_assessment || ""} onChangeText={set("physical_assessment")} multiline style={styles.multiline} />
             <TextField label="Daily activities" value={form.daily_activities || ""} onChangeText={set("daily_activities")} multiline style={styles.multiline} />
             <TextField label="Current medications" value={form.medications || ""} onChangeText={set("medications")} multiline style={styles.multiline} />
@@ -319,10 +270,6 @@ const styles = StyleSheet.create({
     color: colors.text,
     backgroundColor: colors.surface,
   },
-  diagnosis: { gap: 4 },
-  suggestions: { borderWidth: 1, borderColor: colors.border, borderRadius: 12, overflow: "hidden" },
-  suggestion: { paddingHorizontal: 12, paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: colors.borderSoft, backgroundColor: colors.surface },
-  suggestionText: { fontSize: 14, color: colors.text },
   totals: { alignItems: "flex-end", gap: 2 },
   totalLine: { fontSize: 13, color: colors.textMuted },
   total: { fontSize: 17, fontWeight: "700", color: colors.text, marginTop: 2 },
