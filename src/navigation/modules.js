@@ -91,14 +91,25 @@ export const DASHBOARD_MODULES = [
     screen: "DutySchedules",
   },
   {
-    id: "short-visit",
-    title: "Short Visit",
-    subtitle: "Log a short visit",
-    icon: "timer",
-    palette: "amber",
+    id: "care-updates",
+    title: "Caretaker Updates",
+    subtitle: "Daily care logs and cover",
+    icon: "heart",
+    palette: "purple",
     permissions: ["schedules.manage"],
-    screen: "ShortVisit",
+    screen: "CareUpdates",
   },
+  // Short Visit is not needed for now; uncomment to bring it back
+  // (with the ShortVisit route in AppNavigator.js).
+  // {
+  //   id: "short-visit",
+  //   title: "Short Visit",
+  //   subtitle: "Log a short visit",
+  //   icon: "timer",
+  //   palette: "amber",
+  //   permissions: ["schedules.manage"],
+  //   screen: "ShortVisit",
+  // },
   {
     id: "attendance",
     title: "Attendance",

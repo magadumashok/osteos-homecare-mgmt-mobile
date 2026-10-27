@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, StyleSheet, Text, TextInput, View } from "react-native";
 import KeyboardAwareView from "../../components/KeyboardAwareView";
+import KeyboardAwareScrollView from "../../components/KeyboardAwareScrollView";
 import AppScreen from "../../components/AppScreen";
 import DateField from "../../components/DateField";
 import { ErrorBanner, PrimaryButton } from "../../components/Form";
@@ -72,7 +73,7 @@ export default function DischargePatientScreen({ navigation, route }) {
   return (
     <AppScreen title="Discharge" subtitle={name || username}>
       <KeyboardAwareView style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           <Segmented
             value={mode}
             onChange={setMode}
@@ -115,7 +116,7 @@ export default function DischargePatientScreen({ navigation, route }) {
             loading={saving}
             onPress={submit}
           />
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </KeyboardAwareView>
     </AppScreen>
   );

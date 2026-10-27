@@ -12,6 +12,7 @@ import {
   View,
 } from "react-native";
 import KeyboardAwareView from "../../components/KeyboardAwareView";
+import KeyboardAwareScrollView from "../../components/KeyboardAwareScrollView";
 import { Ionicons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useSelector } from "react-redux";
@@ -251,7 +252,7 @@ function PrescriptionForm({ username, type, onCancel, onSaved }) {
 
   return (
     <KeyboardAwareView style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView contentContainerStyle={styles.form}>
         <DateField label="Date" value={date} onChange={setDate} />
 
         {type === "medicine" ? (
@@ -325,7 +326,7 @@ function PrescriptionForm({ username, type, onCancel, onSaved }) {
           <PrimaryButton title="Cancel" variant="outline" onPress={onCancel} style={styles.flex} />
           <PrimaryButton title="Save" icon="checkmark" loading={saving} onPress={save} style={styles.flex} />
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </KeyboardAwareView>
   );
 }

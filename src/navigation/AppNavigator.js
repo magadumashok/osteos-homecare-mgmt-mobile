@@ -39,12 +39,15 @@ import MyTripsScreen from "../screens/driver/MyTripsScreen";
 
 import DutySchedulesScreen from "../screens/admin/DutySchedulesScreen";
 import DutyFormScreen from "../screens/admin/DutyFormScreen";
-import ShortVisitScreen from "../screens/admin/ShortVisitScreen";
+// Short Visit is not needed for now (see the "short-visit" module in modules.js).
+// import ShortVisitScreen from "../screens/admin/ShortVisitScreen";
 import StaffListScreen from "../screens/admin/StaffListScreen";
 import AttendanceScreen from "../screens/admin/AttendanceScreen";
 
 import MyDutiesScreen from "../screens/duties/MyDutiesScreen";
 import DutyDetailScreen from "../screens/duties/DutyDetailScreen";
+import CareLogScreen from "../screens/duties/CareLogScreen";
+import CareUpdatesScreen from "../screens/admin/CareUpdatesScreen";
 
 const Stack = createNativeStackNavigator();
 const screenOptions = { headerShown: false };
@@ -93,12 +96,16 @@ function MainStack() {
 
       <Stack.Screen name="DutySchedules" component={DutySchedulesScreen} />
       <Stack.Screen name="DutyForm" component={DutyFormScreen} />
+      {/* Short Visit is not needed for now.
       <Stack.Screen name="ShortVisit" component={ShortVisitScreen} />
+      */}
       <Stack.Screen name="StaffList" component={StaffListScreen} />
       <Stack.Screen name="Attendance" component={AttendanceScreen} />
 
       <Stack.Screen name="MyDuties" component={MyDutiesScreen} />
       <Stack.Screen name="DutyDetail" component={DutyDetailScreen} />
+      <Stack.Screen name="CareLog" component={CareLogScreen} />
+      <Stack.Screen name="CareUpdates" component={CareUpdatesScreen} />
     </Stack.Navigator>
   );
 }

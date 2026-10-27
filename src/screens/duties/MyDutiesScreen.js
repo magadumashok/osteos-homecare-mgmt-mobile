@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { ActivityIndicator, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import AppScreen from "../../components/AppScreen";
@@ -7,9 +7,9 @@ import DateStrip from "../../components/DateStrip";
 import NotAttendedModal from "../../components/NotAttendedModal";
 import { EmptyState, ErrorState, LoadingView } from "../../components/States";
 import useDutyActions, { dutyStatus, isActionable } from "../../hooks/useDutyActions";
-import { myDuties } from "../../services/dutyService";
+import { myDuties, skipCareDay } from "../../services/dutyService";
 import { capitalize } from "../../utils/format";
-import { time12, timeRange, toIsoDate } from "../../utils/dates";
+import { fromIsoDate, shortDate, time12, timeRange, toIsoDate } from "../../utils/dates";
 import { colors, shadow } from "../../theme";
 
 /** The old app's "Today's schedule" and "Schedule by date" in one screen. */
@@ -45,8 +45,68 @@ export default function MyDutiesScreen({ navigation }) {
   );
 
   const { busyId, confirmSignIn, confirmSignOut, notAttended } = useDutyActions(() => load("refresh"));
+  const [skippingDay, setSkippingDay] = useState(null);
+
+  const skipDay = async (duty, reason) => {
+    try {
+      const message = await skipCareDay(duty._id, date, reason);
+      Alert.alert("Day skipped", message || "Your coordinator has been told.");
+      load("refresh");
+    } catch (e) {
+      Alert.alert("Could not skip the day", e.message);
+    }
+  };
+
+  /** A caretaker's 24-hour duty: shown every day of the stay, logged instead of signed in. */
+  const renderLiveIn = (item) => {
+    const day = Math.round((fromIsoDate(date) - fromIsoDate(item.date)) / 86400000) + 1;
+    const total = Math.round((fromIsoDate(item.end_date) - fromIsoDate(item.date)) / 86400000) + 1;
+    return (
+      <Pressable
+        onPress={() => navigation.navigate("DutyDetail", { duty: item, date })}
+        style={({ pressed }) => [styles.card, pressed && styles.pressed]}
+      >
+        <View style={styles.cardTop}>
+          <View style={[styles.timeBox, styles.liveInBox]}>
+            <Text style={[styles.timeStart, styles.liveInText]}>24h</Text>
+            <Text style={styles.timeEnd}>care</Text>
+          </View>
+          <View style={styles.cardBody}>
+            <Text style={styles.patient} numberOfLines={1}>
+              {item.patient_name || item.patient_id}
+            </Text>
+            {!!item.address && (
+              <View style={styles.metaRow}>
+                <Ionicons name="location-outline" size={13} color={colors.textMuted} />
+                <Text style={styles.meta} numberOfLines={1}>
+                  {item.address}
+                </Text>
+              </View>
+            )}
+            <Text style={styles.meta}>
+              Day {day} of {total} · until {shortDate(item.end_date)}
+            </Text>
+          </View>
+          <Ionicons name="chevron-forward" size={20} color="#c0c8d0" />
+        </View>
+        <View style={styles.actions}>
+          {date >= toIsoDate() && (
+            <Pressable onPress={() => setSkippingDay(item)} style={[styles.actionButton, styles.actionGhost]}>
+              <Text style={styles.actionGhostText}>Can't come</Text>
+            </Pressable>
+          )}
+          <Pressable onPress={() => navigation.navigate("CareLog", { duty: item, date })} style={styles.actionButton}>
+            <Ionicons name="clipboard-outline" size={18} color={colors.onPrimary} />
+            <Text style={styles.actionText}>Daily update</Text>
+          </Pressable>
+        </View>
+      </Pressable>
+    );
+  };
 
   const renderDuty = ({ item }) => {
+    if (item.live_in) return renderLiveIn(item);
+
     const status = dutyStatus(item);
     const actionable = isActionable(item) && status.key !== "missed";
     const busy = busyId === item._id;
@@ -148,6 +208,18 @@ export default function MyDutiesScreen({ navigation }) {
           notAttended(duty, reason);
         }}
       />
+      <NotAttendedModal
+        visible={!!skippingDay}
+        onClose={() => setSkippingDay(null)}
+        onSubmit={(reason) => {
+          const duty = skippingDay;
+          setSkippingDay(null);
+          skipDay(duty, reason);
+        }}
+        title={date === toIsoDate() ? "Can't come today" : `Skip ${shortDate(date)}`}
+        subtitle="Your coordinator will be told and can send another caretaker."
+        reasons={["Personal emergency", "Unwell", "Family function", "Travel"]}
+      />
     </AppScreen>
   );
 }
@@ -167,6 +239,8 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   timeStart: { fontSize: 14, fontWeight: "700", color: colors.primary },
+  liveInBox: { backgroundColor: "#f3e5f5" },
+  liveInText: { color: "#6a1b9a", fontSize: 16 },
   timeEnd: { fontSize: 12, color: colors.textMuted, marginTop: 2 },
   cardBody: { flex: 1, gap: 4 },
   patient: { fontSize: 16, fontWeight: "700", color: colors.text },

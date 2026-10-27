@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Alert, ScrollView, StyleSheet } from "react-native";
+import { Alert, StyleSheet } from "react-native";
 import KeyboardAwareView from "../../components/KeyboardAwareView";
+import KeyboardAwareScrollView from "../../components/KeyboardAwareScrollView";
 import AppScreen from "../../components/AppScreen";
 import { ErrorBanner, PrimaryButton } from "../../components/Form";
 import PatientFields, { BLANK_PATIENT, patientPayload } from "../../components/PatientFields";
@@ -54,11 +55,11 @@ export default function PatientFormScreen({ navigation, route }) {
         <LoadingView />
       ) : (
         <KeyboardAwareView style={styles.flex}>
-          <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+          <KeyboardAwareScrollView contentContainerStyle={styles.content}>
             <PatientFields form={form} onChange={setForm} isEdit={isEdit} />
             <ErrorBanner message={error} />
             <PrimaryButton title={isEdit ? "Save changes" : "Register patient"} icon="checkmark" loading={saving} onPress={save} />
-          </ScrollView>
+          </KeyboardAwareScrollView>
         </KeyboardAwareView>
       )}
     </AppScreen>

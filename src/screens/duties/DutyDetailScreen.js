@@ -73,14 +73,15 @@ export default function DutyDetailScreen({ navigation, route }) {
     duty.end_date && duty.end_date !== duty.date ? `${longDate(duty.date)} → ${longDate(duty.end_date)}` : longDate(duty.date);
 
   return (
-    <AppScreen title={duty.patient_name || "Duty"} subtitle={timeRange(duty.start_time, duty.end_time)}>
+    <AppScreen title={duty.patient_name || "Duty"} subtitle={duty.live_in ? "24-hour care" : timeRange(duty.start_time, duty.end_time)}>
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.card}>
           <View style={[styles.chip, { backgroundColor: status.bg }]}>
             <Text style={[styles.chipText, { color: status.color }]}>{status.label}</Text>
           </View>
-          <Row icon="calendar-outline" label="Date" value={dateText} />
-          <Row icon="time-outline" label="Time" value={timeRange(duty.start_time, duty.end_time)} />
+          <Row icon="calendar-outline" label={duty.live_in ? "Stay" : "Date"} value={dateText} />
+          <Row icon="time-outline" label="Time" value={duty.live_in ? "Round the clock" : timeRange(duty.start_time, duty.end_time)} />
+          <Row icon="list-outline" label="Care tasks" value={duty.live_in ? (duty.care_tasks || []).join(", ") : null} />
           <Row icon="briefcase-outline" label="Role" value={capitalize(duty.role)} />
           <Row icon="pricetag-outline" label="Service package" value={duty.service_package} />
           <Row icon="car-outline" label="Driver" value={duty.driver} />
@@ -100,6 +101,13 @@ export default function DutyDetailScreen({ navigation, route }) {
             <PrimaryButton title="Can't attend" variant="outline" onPress={() => setSkipping(true)} style={styles.flex} />
             <PrimaryButton title="Sign in" icon="log-in-outline" loading={busy} onPress={() => confirmSignIn(duty)} style={styles.flex} />
           </View>
+        )}
+        {duty.live_in && (
+          <PrimaryButton
+            title="Daily care update"
+            icon="clipboard-outline"
+            onPress={() => navigation.navigate("CareLog", { duty, date: route.params?.date })}
+          />
         )}
         {actionable && status.key === "active" && (
           <PrimaryButton title="Sign out" icon="log-out-outline" loading={busy} onPress={() => confirmSignOut(duty)} />

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, StyleSheet, Text, View } from "react-native";
 import KeyboardAwareView from "../../components/KeyboardAwareView";
+import KeyboardAwareScrollView from "../../components/KeyboardAwareScrollView";
 import { Ionicons } from "@expo/vector-icons";
 import AppScreen from "../../components/AppScreen";
 import { ErrorBanner, PasswordField, PrimaryButton } from "../../components/Form";
@@ -48,7 +49,7 @@ export default function ChangePasswordScreen({ navigation }) {
   return (
     <AppScreen title="Change Password">
       <KeyboardAwareView style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           <View style={styles.iconCircle}>
             <Ionicons name="lock-closed" size={36} color={colors.primary} />
           </View>
@@ -65,7 +66,7 @@ export default function ChangePasswordScreen({ navigation }) {
             />
             <PrimaryButton title="Update password" icon="checkmark-circle-outline" loading={busy} onPress={onSubmit} />
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </KeyboardAwareView>
     </AppScreen>
   );

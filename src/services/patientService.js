@@ -81,6 +81,9 @@ export const medicationChecklist = (username, date) =>
 export const administerMedication = (username, data) =>
   api.post(`${patientPath(username)}/medications/administered`, data).then(unwrap);
 
+/** Remove a scheduled medicine entered wrongly or twice (refused once a dose is given). */
+export const deleteMedication = (username, id) => api.delete(`${patientPath(username)}/medications/${id}`);
+
 export const listGuardians = (username) => api.get(`${patientPath(username)}/guardians`).then(unwrap);
 
 // ─── Prescriptions ───────────────────────────────────────────────────────────

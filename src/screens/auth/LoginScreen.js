@@ -145,7 +145,7 @@ export default function LoginScreen({ navigation }) {
             <Image
               resizeMode="contain"
               source={require("../../../assets/osteos-logo.png")}
-              style={[styles.logo, responsive.isTablet && styles.logoTablet]}
+              style={[styles.logo, responsive.isTablet ? styles.logoTablet : responsive.height < 700 && styles.logoCompact]}
             />
             <View style={styles.brandPill}>
               <Ionicons name="medkit-outline" size={14} color={colors.onPrimary} />
@@ -328,6 +328,8 @@ const styles = StyleSheet.create({
   hero: { alignItems: "center", gap: 14, paddingTop: 8 },
   logo: { width: 210, height: 104 },
   logoTablet: { width: 260, height: 128 },
+  // Short phones: a smaller logo keeps the Sign in button on screen.
+  logoCompact: { width: 160, height: 80 },
   brandPill: {
     flexDirection: "row",
     alignItems: "center",
@@ -372,7 +374,8 @@ const styles = StyleSheet.create({
   },
   tab: {
     flex: 1,
-    height: 38,
+    minHeight: 38,
+    paddingVertical: 6,
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",

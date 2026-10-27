@@ -38,6 +38,24 @@ export const rescheduleDuty = (id, data) => api.put(`duties/${id}`, data).then(m
 
 export const createShortVisit = (data) => api.post("short-visits", data).then(message);
 
+// ─── 24-hour caretaker duties ────────────────────────────────────────────────
+/** Care tasks offered when scheduling a caretaker. */
+export const careTasks = () => api.get("care-logs/tasks").then(unwrap);
+
+/** { duty, logs }: the duty (with names) and every logged or skipped day. */
+export const careLogs = (dutyId) => api.get(`duties/${dutyId}/care-logs`).then(unwrap);
+
+/** Every caretaker duty running on `date`, each with its `log` for the day (or null). */
+export const careDay = (date) => api.get("care-logs", { params: { date } }).then(unwrap);
+
+/** The day's update: { tasks: [{ name, done, time, note }], symptoms, notes }. */
+export const saveCareLog = (dutyId, date, data) => api.put(`duties/${dutyId}/care-logs/${date}`, data).then(message);
+
+export const skipCareDay = (dutyId, date, reason) => api.post(`duties/${dutyId}/skip-day`, { date, reason }).then(message);
+
+export const coverCareDay = (dutyId, date, staffId) =>
+  api.post(`duties/${dutyId}/cover-day`, { date, staff_id: staffId }).then(message);
+
 /** A staff member's duties (with one patient when patientId is given). */
 export const staffAttendance = (staffId, patientId) =>
   api.get(`attendance/staff/${encodeURIComponent(staffId)}`, { params: patientId ? { patient_id: patientId } : {} }).then(unwrap);

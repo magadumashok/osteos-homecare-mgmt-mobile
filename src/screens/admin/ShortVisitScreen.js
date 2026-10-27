@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
-import { Alert, ScrollView, StyleSheet, View } from "react-native";
+import { Alert, StyleSheet, View } from "react-native";
 import KeyboardAwareView from "../../components/KeyboardAwareView";
+import KeyboardAwareScrollView from "../../components/KeyboardAwareScrollView";
 import AppScreen from "../../components/AppScreen";
 import DateField from "../../components/DateField";
 import { ErrorBanner, PrimaryButton, TextField } from "../../components/Form";
@@ -59,7 +60,7 @@ export default function ShortVisitScreen({ navigation }) {
   return (
     <AppScreen title="Short Visit">
       <KeyboardAwareView style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           <SelectField label="Staff member *" value={form.staff_id} options={staff} onChange={set("staff_id")} />
           <TextField label="Patient name *" value={form.patient_name} onChangeText={set("patient_name")} />
           <SelectField label="Country" value={form.country} options={countries} onChange={set("country")} allowClear />
@@ -74,7 +75,7 @@ export default function ShortVisitScreen({ navigation }) {
           <TextField label="Fees" value={form.visit_fees} onChangeText={set("visit_fees")} keyboardType="decimal-pad" />
           <ErrorBanner message={error} />
           <PrimaryButton title="Save short visit" icon="checkmark" loading={saving} onPress={save} />
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </KeyboardAwareView>
     </AppScreen>
   );

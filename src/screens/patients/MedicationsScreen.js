@@ -5,12 +5,12 @@ import {
   Modal,
   Pressable,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   View,
 } from "react-native";
 import KeyboardAwareView from "../../components/KeyboardAwareView";
+import KeyboardAwareScrollView from "../../components/KeyboardAwareScrollView";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 import AppScreen from "../../components/AppScreen";
@@ -23,6 +23,7 @@ import { EmptyState, ErrorState, LoadingView } from "../../components/States";
 import {
   addMedication,
   administerMedication,
+  deleteMedication,
   listGuardians,
   listMedicationSchedule,
   medicationChecklist,
@@ -45,6 +46,37 @@ const FOOD = ["Before food", "After food"].map((v) => ({ value: v, label: v }));
 
 const dose = (m) => [m.dosage, m.dose_unit].filter(Boolean).join(" ");
 
+/** Ask before removing a duplicate or wrongly entered medicine, then reload. */
+function confirmDelete(username, medicine, onDeleted) {
+  Alert.alert(
+    "Delete medicine?",
+    `${medicine.medicine_name}\n${[dose(medicine), medicine.frequency, shortDate(medicine.date)].filter(Boolean).join(" · ")}\n\nThis removes it from the patient's medication list.`,
+    [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await deleteMedication(username, medicine._id);
+            onDeleted();
+          } catch (e) {
+            Alert.alert("Could not delete", e.message);
+          }
+        },
+      },
+    ],
+  );
+}
+
+function DeleteButton({ onPress }) {
+  return (
+    <Pressable onPress={onPress} hitSlop={10} style={styles.deleteButton} accessibilityLabel="Delete medicine">
+      <Ionicons name="trash-outline" size={18} color={colors.danger} />
+    </Pressable>
+  );
+}
+
 export default function MedicationsScreen({ route }) {
   const { username, name } = route.params;
   const permissions = useSelector((s) => s.auth.permissions);
@@ -62,16 +94,28 @@ export default function MedicationsScreen({ route }) {
         ]}
       />
       {tab === "today" ? (
-        <Checklist username={username} canGive={can(permissions, "medications.administer")} />
+        <Checklist
+          username={username}
+          canGive={can(permissions, "medications.administer")}
+          canDelete={can(permissions, ["medications.manage", "medications.administer"])}
+        />
       ) : (
-        <Schedule username={username} canAdd={can(permissions, "medications.manage")} />
+        <Schedule
+          username={username}
+          canAdd={can(permissions, "medications.manage")}
+          canDelete={can(permissions, ["medications.manage", "medications.administer"])}
+        />
       )}
     </AppScreen>
   );
 }
 
-/** The old "Administer medication" screen: tick each session given, with a witness. */
-function Checklist({ username, canGive }) {
+/**
+ * The old "Administer medication" screen: tick each session given, with a
+ * witness. Each tap is confirmed first, as a given dose cannot be undone.
+ * The bin removes a wrongly entered medicine until a dose of it is given.
+ */
+function Checklist({ username, canGive, canDelete }) {
   const [date, setDate] = useState(toIsoDate());
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -99,6 +143,17 @@ function Checklist({ username, canGive }) {
     load();
   }, [load]);
 
+  // Guard against an accidental tap: a dose marked given cannot be undone.
+  const confirmGive = (medicine, session) =>
+    Alert.alert(
+      `${session.label} dose`,
+      `Mark ${medicine.medicine_name}${dose(medicine) ? ` (${dose(medicine)})` : ""} as given for ${session.label.toLowerCase()} on ${shortDate(date)}?\n\nThis cannot be undone.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Continue", onPress: () => setGiving({ medicine, session }) },
+      ],
+    );
+
   return (
     <View style={styles.flex}>
       <View style={styles.dateRow}>
@@ -119,7 +174,10 @@ function Checklist({ username, canGive }) {
           }
           renderItem={({ item }) => (
             <View style={styles.card}>
-              <Text style={styles.medName}>{item.medicine_name}</Text>
+              <View style={styles.cardHeader}>
+                <Text style={styles.medName}>{item.medicine_name}</Text>
+                {canDelete && item.deletable && <DeleteButton onPress={() => confirmDelete(username, item, () => load("refresh"))} />}
+              </View>
               <Text style={styles.medMeta}>
                 {[dose(item), item.frequency, item.before_or_after_food].filter(Boolean).join(" · ")}
               </Text>
@@ -130,7 +188,7 @@ function Checklist({ username, canGive }) {
                     <Pressable
                       key={session.key}
                       disabled={!!given || !canGive}
-                      onPress={() => setGiving({ medicine: item, session })}
+                      onPress={() => confirmGive(item, session)}
                       style={[styles.session, given && styles.sessionGiven]}
                       accessibilityLabel={`${session.label}${given ? " given" : ""}`}
                     >
@@ -274,7 +332,7 @@ function AdministerSheet({ username, date, giving, onClose, onDone }) {
 }
 
 /** The old "Medication schedule" screen: the list, and a form to add a medicine. */
-function Schedule({ username, canAdd }) {
+function Schedule({ username, canAdd, canDelete }) {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -325,7 +383,10 @@ function Schedule({ username, canAdd }) {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.medName}>{item.medicine_name}</Text>
-                <Text style={styles.medDate}>{shortDate(item.date)}</Text>
+                <View style={styles.headerRight}>
+                  <Text style={styles.medDate}>{shortDate(item.date)}</Text>
+                  {canDelete && item.deletable && <DeleteButton onPress={() => confirmDelete(username, item, load)} />}
+                </View>
               </View>
               <Text style={styles.medMeta}>
                 {[dose(item), item.frequency, item.before_or_after_food, item.time && time12(item.time)].filter(Boolean).join(" · ")}
@@ -394,7 +455,7 @@ function AddMedicationForm({ username, onCancel, onSaved }) {
 
   return (
     <KeyboardAwareView style={styles.flex}>
-      <ScrollView contentContainerStyle={styles.form} keyboardShouldPersistTaps="handled">
+      <KeyboardAwareScrollView contentContainerStyle={styles.form}>
         <TextField label="Medicine name *" value={form.medicine_name} onChangeText={set("medicine_name")} placeholder="e.g. Paracetamol" />
         <TextField label="Dose *" value={form.dosage} onChangeText={set("dosage")} keyboardType="decimal-pad" placeholder="e.g. 500" />
         <Text style={styles.label}>Unit</Text>
@@ -412,7 +473,7 @@ function AddMedicationForm({ username, onCancel, onSaved }) {
           <PrimaryButton title="Cancel" variant="outline" onPress={onCancel} style={styles.flex} />
           <PrimaryButton title="Save" icon="checkmark" loading={saving} onPress={save} style={styles.flex} />
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollView>
     </KeyboardAwareView>
   );
 }
@@ -423,7 +484,16 @@ const styles = StyleSheet.create({
   dateRow: { paddingHorizontal: 16, paddingTop: 12 },
   list: { padding: 16, paddingBottom: 40, gap: 12 },
   card: { backgroundColor: colors.surface, borderRadius: 16, padding: 14, gap: 6, ...shadow },
-  cardHeader: { flexDirection: "row", justifyContent: "space-between", gap: 8 },
+  cardHeader: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 8 },
+  headerRight: { flexDirection: "row", alignItems: "center", gap: 10 },
+  deleteButton: {
+    width: 34,
+    height: 34,
+    borderRadius: 17,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#fef2f2",
+  },
   medName: { fontSize: 16, fontWeight: "700", color: colors.text, flexShrink: 1 },
   medDate: { fontSize: 12, color: colors.textMuted },
   medMeta: { fontSize: 13, color: colors.textMuted },

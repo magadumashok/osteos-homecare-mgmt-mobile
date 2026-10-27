@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import KeyboardAwareView from "../../components/KeyboardAwareView";
+import KeyboardAwareScrollView from "../../components/KeyboardAwareScrollView";
 import { Ionicons } from "@expo/vector-icons";
 import AppScreen from "../../components/AppScreen";
 import { ErrorBanner, OtpInput, PasswordField, PrimaryButton, TextField } from "../../components/Form";
@@ -72,7 +73,7 @@ export default function ForgotPasswordScreen({ navigation, route }) {
   return (
     <AppScreen title="Forgot Password">
       <KeyboardAwareView style={styles.flex}>
-        <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <KeyboardAwareScrollView contentContainerStyle={styles.content}>
           <View style={styles.iconCircle}>
             <Ionicons name="lock-open" size={36} color={colors.primary} />
           </View>
@@ -127,7 +128,7 @@ export default function ForgotPasswordScreen({ navigation, route }) {
               </>
             )}
           </View>
-        </ScrollView>
+        </KeyboardAwareScrollView>
       </KeyboardAwareView>
     </AppScreen>
   );

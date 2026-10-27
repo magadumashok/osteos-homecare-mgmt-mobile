@@ -2,6 +2,7 @@ import { ScrollView, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useResponsiveLayout } from "../utils/responsive";
 import KeyboardAwareView from "./KeyboardAwareView";
+import useScrollToFocusedInput from "../hooks/useScrollToFocusedInput";
 
 /** Centered, width-capped content for the login-style screens. */
 export default function ScreenContainer({
@@ -12,6 +13,7 @@ export default function ScreenContainer({
   keyboardAware = false,
 }) {
   const responsive = useResponsiveLayout();
+  const { scrollProps, extraBottom } = useScrollToFocusedInput(keyboardAware && scrollEnabled);
 
   const Body = keyboardAware ? KeyboardAwareView : View;
 
@@ -32,8 +34,9 @@ export default function ScreenContainer({
       <Body style={styles.flex}>
         {scrollEnabled ? (
           <ScrollView
+            {...scrollProps}
             bounces={false}
-            contentContainerStyle={[styles.scrollContent, centered && styles.centered]}
+            contentContainerStyle={[styles.scrollContent, centered && styles.centered, extraBottom > 0 && { paddingBottom: extraBottom }]}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
           >

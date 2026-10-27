@@ -8,7 +8,7 @@ import { EmptyState, ErrorState, LoadingView } from "../../components/States";
 import { dutyStatus } from "../../hooks/useDutyActions";
 import { listDuties } from "../../services/dutyService";
 import { capitalize } from "../../utils/format";
-import { timeRange, toIsoDate } from "../../utils/dates";
+import { shortDate, timeRange, toIsoDate } from "../../utils/dates";
 import { colors, shadow } from "../../theme";
 
 /** Old "List of all duty schedules": every duty starting on a day; tap to reschedule. */
@@ -64,7 +64,9 @@ export default function DutySchedulesScreen({ navigation }) {
             return (
               <Pressable onPress={() => navigation.navigate("DutyForm", { duty: item })} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
                 <View style={styles.header}>
-                  <Text style={styles.time}>{timeRange(item.start_time, item.end_time)}</Text>
+                  <Text style={styles.time}>
+                    {item.live_in ? `24-hour care · until ${shortDate(item.end_date)}` : timeRange(item.start_time, item.end_time)}
+                  </Text>
                   <View style={[styles.chip, { backgroundColor: status.bg }]}>
                     <Text style={[styles.chipText, { color: status.color }]}>{status.label}</Text>
                   </View>

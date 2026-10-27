@@ -6,6 +6,14 @@ import { currentPosition } from "../utils/location";
 
 /** Where a duty stands, for the status chip and which buttons to show. */
 export function dutyStatus(duty) {
+  // Caretakers stay round the clock between two dates; they log each day instead of signing in.
+  if (duty.live_in) {
+    const today = toIsoDate();
+    if (duty.not_attended) return { key: "missed", label: "Cancelled", color: "#b91c1c", bg: "#fef2f2" };
+    if (duty.date > today) return { key: "upcoming", label: "Upcoming", color: "#1565c0", bg: "#e3f2fd" };
+    if ((duty.end_date || duty.date) < today) return { key: "done", label: "Ended", color: "#2e7d32", bg: "#e8f5e9" };
+    return { key: "live_in", label: "24-hour care", color: "#6a1b9a", bg: "#f3e5f5" };
+  }
   if (duty.not_attended) return { key: "missed", label: "Not attended", color: "#b91c1c", bg: "#fef2f2" };
   if (duty.sign_out) return { key: "done", label: "Completed", color: "#2e7d32", bg: "#e8f5e9" };
   if (duty.sign_in) return { key: "active", label: "In progress", color: "#e65100", bg: "#fff3e0" };

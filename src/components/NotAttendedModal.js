@@ -6,8 +6,18 @@ import { ErrorBanner, PrimaryButton } from "./Form";
 
 const QUICK_REASONS = ["Patient not available", "Patient unwell / hospitalised", "Personal emergency", "Transport issue"];
 
-/** Ask why a duty will not be attended (the old app's "duty not attending" form). */
-export default function NotAttendedModal({ visible, onClose, onSubmit }) {
+/**
+ * Ask why a duty will not be attended (the old app's "duty not attending"
+ * form). Also used by caretakers to skip one day of a 24-hour duty.
+ */
+export default function NotAttendedModal({
+  visible,
+  onClose,
+  onSubmit,
+  title = "Can't attend this duty",
+  subtitle = "Your coordinator will see this reason.",
+  reasons = QUICK_REASONS,
+}) {
   const [reason, setReason] = useState("");
   const [error, setError] = useState(null);
 
@@ -26,10 +36,10 @@ export default function NotAttendedModal({ visible, onClose, onSubmit }) {
       <KeyboardAwareView style={styles.flex}>
         <Pressable style={styles.backdrop} onPress={onClose} />
         <View style={styles.sheet}>
-          <Text style={styles.title}>Can't attend this duty</Text>
-          <Text style={styles.subtitle}>Your coordinator will see this reason.</Text>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
           <View style={styles.chips}>
-            {QUICK_REASONS.map((r) => (
+            {reasons.map((r) => (
               <Pressable key={r} onPress={() => setReason(r)} style={[styles.chip, reason === r && styles.chipActive]}>
                 <Text style={[styles.chipText, reason === r && styles.chipTextActive]}>{r}</Text>
               </Pressable>
