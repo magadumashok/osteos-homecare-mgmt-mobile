@@ -1,16 +1,18 @@
 import { useCallback, useMemo, useState } from "react";
-import { Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
+import { Alert, Image, Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
 import ActionGrid from "../../components/ActionGrid";
 import AppScreen from "../../components/AppScreen";
 import { PrimaryButton } from "../../components/Form";
 import NotAttendedModal from "../../components/NotAttendedModal";
-import useDutyActions, { dutyStatus, isActionable } from "../../hooks/useDutyActions";
+import useDutyActions, { dutyStatus, isActionable, signInHint } from "../../hooks/useDutyActions";
 import { patientActions } from "../../navigation/patientModules";
-import { getDuty } from "../../services/dutyService";
+import { addPresencePhoto, getDuty } from "../../services/dutyService";
 import { capitalize } from "../../utils/format";
-import { longDate, time12, timeRange } from "../../utils/dates";
+import { currentPosition } from "../../utils/location";
+import { pickPhoto } from "../../utils/photos";
+import { longDate, shortDate, time12, timeRange, toIsoDate } from "../../utils/dates";
 import { colors, shadow } from "../../theme";
 
 function Row({ icon, label, value }) {
@@ -28,9 +30,10 @@ function Row({ icon, label, value }) {
 
 /** One visit: attendance buttons plus everything to record for the patient. */
 export default function DutyDetailScreen({ navigation, route }) {
-  const permissions = useSelector((s) => s.auth.permissions);
+  const { permissions, user } = useSelector((s) => s.auth);
   const [duty, setDuty] = useState(route.params.duty);
   const [skipping, setSkipping] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   // GET duties/{id} needs schedules.view; keep the list's copy if it is refused.
   const reload = useCallback(async () => {
@@ -61,6 +64,33 @@ export default function DutyDetailScreen({ navigation, route }) {
       }),
     [permissions, navigation, duty],
   );
+
+  // Proof of the visit: while signed in to a visit, or on any day of a 24-hour stay (server checks too).
+  const own = duty.staff_id === user?.username;
+  const today = toIsoDate();
+  const canPhoto =
+    own &&
+    !duty.not_attended &&
+    (duty.live_in
+      ? duty.date <= today && (duty.end_date || duty.date) >= today && !(duty.skipped_dates || []).includes(today)
+      : duty.sign_in && !duty.sign_out);
+  const photos = Array.isArray(duty.presence_photos) ? duty.presence_photos : [];
+
+  const takePhoto = async () => {
+    // Camera only: the photo has to be taken there and then, not picked from the gallery.
+    const photo = await pickPhoto("camera");
+    if (!photo) return;
+    setUploading(true);
+    try {
+      const entry = await addPresencePhoto(duty._id, photo, await currentPosition());
+      setDuty((current) => ({ ...current, presence_photos: [...(current.presence_photos || []), entry] }));
+      Alert.alert("Photo saved", "Your coordinator can see it with this duty.");
+    } catch (e) {
+      Alert.alert("Could not save photo", e.message);
+    } finally {
+      setUploading(false);
+    }
+  };
 
   const openMaps = () => {
     const query = encodeURIComponent(duty.address);
@@ -97,9 +127,38 @@ export default function DutyDetailScreen({ navigation, route }) {
         </View>
 
         {actionable && status.key === "scheduled" && (
-          <View style={styles.buttons}>
-            <PrimaryButton title="Can't attend" variant="outline" onPress={() => setSkipping(true)} style={styles.flex} />
-            <PrimaryButton title="Sign in" icon="log-in-outline" loading={busy} onPress={() => confirmSignIn(duty)} style={styles.flex} />
+          <>
+            <View style={styles.buttons}>
+              <PrimaryButton title="Can't attend" variant="outline" onPress={() => setSkipping(true)} style={styles.flex} />
+              <PrimaryButton title="Sign in" icon="log-in-outline" loading={busy} onPress={() => confirmSignIn(duty)} style={styles.flex} />
+            </View>
+            <Text style={styles.hint}>{signInHint(duty)}</Text>
+          </>
+        )}
+
+        {canPhoto && (
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>Photo with patient</Text>
+            <Text style={styles.hint}>
+              Take a photo of yourself with the patient at their home to confirm the visit. Your location is saved with it.
+            </Text>
+            {photos.length > 0 && (
+              <ScrollView horizontal contentContainerStyle={styles.photos} showsHorizontalScrollIndicator={false}>
+                {photos.map((p) => (
+                  <View key={p.url} style={styles.photoBox}>
+                    <Image source={{ uri: p.url }} style={styles.photo} />
+                    <Text style={styles.photoTime}>{[shortDate(p.date), time12(p.time)].join(" · ")}</Text>
+                  </View>
+                ))}
+              </ScrollView>
+            )}
+            <PrimaryButton
+              title={photos.some((p) => p.date === toIsoDate()) ? "Take another photo" : "Take photo with patient"}
+              icon="camera-outline"
+              variant="outline"
+              loading={uploading}
+              onPress={takePhoto}
+            />
           </View>
         )}
         {duty.live_in && (
@@ -151,5 +210,11 @@ const styles = StyleSheet.create({
   rowLabel: { fontSize: 12, color: colors.textFaint },
   rowValue: { fontSize: 15, color: colors.text, marginTop: 1 },
   buttons: { flexDirection: "row", gap: 12 },
+  hint: { fontSize: 12, color: colors.textMuted, textAlign: "center" },
+  cardTitle: { fontSize: 16, fontWeight: "700", color: colors.text },
+  photos: { gap: 10 },
+  photoBox: { width: 110, gap: 4 },
+  photo: { width: 110, height: 110, borderRadius: 12, backgroundColor: colors.border },
+  photoTime: { fontSize: 11, color: colors.textMuted, textAlign: "center" },
   sectionTitle: { fontSize: 20, fontWeight: "700", color: colors.text, marginTop: 4 },
 });

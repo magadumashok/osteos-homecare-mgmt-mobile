@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert } from "react-native";
 import { markNotAttended, signIn, signOut } from "../services/dutyService";
-import { nowTime, toIsoDate } from "../utils/dates";
+import { fromIsoDate, nowTime, time12, toIsoDate } from "../utils/dates";
 import { currentPosition } from "../utils/location";
 
 /** Where a duty stands, for the status chip and which buttons to show. */
@@ -24,6 +24,37 @@ export function dutyStatus(duty) {
 export function isActionable(duty) {
   const today = toIsoDate();
   return duty.date <= today && (duty.end_date || duty.date) >= today;
+}
+
+// Sign-in is allowed this many minutes either side of the start time (the server checks too).
+const GRACE_MINUTES = 5;
+
+function at(date, time) {
+  const d = fromIsoDate(date);
+  const [h, m] = String(time || "00:00").split(":").map(Number);
+  d.setHours(h || 0, m || 0, 0, 0);
+  return d;
+}
+
+const clock = (d) => time12(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`);
+
+/** When the visit starts and ends, and when sign-in is open (a visit ending "before" it starts runs overnight). */
+export function dutyWindow(duty) {
+  const start = at(duty.date, duty.start_time);
+  let end = at(duty.end_date || duty.date, duty.end_time);
+  if (end <= start) end = new Date(end.getTime() + 86400000);
+  return {
+    start,
+    end,
+    signInFrom: new Date(start.getTime() - GRACE_MINUTES * 60000),
+    signInUntil: new Date(start.getTime() + GRACE_MINUTES * 60000),
+  };
+}
+
+/** "Sign in between 8:55 am and 9:05 am" for the card under the button. */
+export function signInHint(duty) {
+  const { signInFrom, signInUntil } = dutyWindow(duty);
+  return `Sign in between ${clock(signInFrom)} and ${clock(signInUntil)}`;
 }
 
 /**
@@ -49,8 +80,21 @@ export default function useDutyActions(onChanged) {
     }
   };
 
-  const confirmSignIn = (duty) =>
-    Alert.alert("Sign in", `Start your visit with ${duty.patient_name || "this patient"} now?`, [
+  const confirmSignIn = (duty) => {
+    const { signInFrom, signInUntil } = dutyWindow(duty);
+    const now = new Date();
+    if (now < signInFrom) {
+      Alert.alert("Too early", `You can sign in from ${clock(signInFrom)} (${GRACE_MINUTES} minutes before the visit starts).`);
+      return;
+    }
+    if (now > signInUntil) {
+      Alert.alert(
+        "Sign-in closed",
+        `Sign-in was open until ${clock(signInUntil)}, ${GRACE_MINUTES} minutes after the start time. Ask your coordinator to reschedule the duty.`,
+      );
+      return;
+    }
+    return Alert.alert("Sign in", `Start your visit with ${duty.patient_name || "this patient"} now?`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Sign in",
@@ -63,9 +107,19 @@ export default function useDutyActions(onChanged) {
         },
       },
     ]);
+  };
 
-  const confirmSignOut = (duty) =>
-    Alert.alert("Sign out", `Finish your visit with ${duty.patient_name || "this patient"} now?`, [
+  const confirmSignOut = (duty) => {
+    if (!duty.sign_in) {
+      Alert.alert("Not signed in", "Sign in to this duty first.");
+      return;
+    }
+    const { end } = dutyWindow(duty);
+    if (new Date() < end) {
+      Alert.alert("Session not over", `You can sign out from ${clock(end)}, when the session ends.`);
+      return;
+    }
+    return Alert.alert("Sign out", `Finish your visit with ${duty.patient_name || "this patient"} now?`, [
       { text: "Cancel", style: "cancel" },
       {
         text: "Sign out",
@@ -78,6 +132,7 @@ export default function useDutyActions(onChanged) {
         },
       },
     ]);
+  };
 
   const notAttended = (duty, reason) =>
     run(duty, () => markNotAttended(duty._id, reason), "Duty updated", { not_attended: true, not_attended_reason: reason });

@@ -6,7 +6,7 @@ import AppScreen from "../../components/AppScreen";
 import DateStrip from "../../components/DateStrip";
 import NotAttendedModal from "../../components/NotAttendedModal";
 import { EmptyState, ErrorState, LoadingView } from "../../components/States";
-import useDutyActions, { dutyStatus, isActionable } from "../../hooks/useDutyActions";
+import useDutyActions, { dutyStatus, isActionable, signInHint } from "../../hooks/useDutyActions";
 import { myDuties, skipCareDay } from "../../services/dutyService";
 import { capitalize } from "../../utils/format";
 import { fromIsoDate, shortDate, time12, timeRange, toIsoDate } from "../../utils/dates";
@@ -166,6 +166,8 @@ export default function MyDutiesScreen({ navigation }) {
           </View>
         )}
 
+        {actionable && status.key === "scheduled" && <Text style={styles.hint}>{signInHint(item)}</Text>}
+
         {status.key === "done" && (
           <Text style={styles.doneText}>
             {timeRange(item.signin_time, item.signout_time) && `Attended ${timeRange(item.signin_time, item.signout_time)}`}
@@ -264,4 +266,5 @@ const styles = StyleSheet.create({
   actionGhost: { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border },
   actionGhostText: { color: colors.textBody, fontSize: 14, fontWeight: "600" },
   doneText: { fontSize: 12, color: colors.success },
+  hint: { fontSize: 12, color: colors.textMuted, textAlign: "center" },
 });

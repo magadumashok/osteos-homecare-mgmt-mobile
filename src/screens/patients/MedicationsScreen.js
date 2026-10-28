@@ -46,11 +46,20 @@ const FOOD = ["Before food", "After food"].map((v) => ({ value: v, label: v }));
 
 const dose = (m) => [m.dosage, m.dose_unit].filter(Boolean).join(" ");
 
-/** Ask before removing a duplicate or wrongly entered medicine, then reload. */
+/**
+ * Ask before removing a duplicate or wrongly entered medicine, then reload.
+ * Doses are kept per medicine and day, so a duplicate's doses stay with the
+ * remaining copy; deleting the only entry removes that day's doses too.
+ */
 function confirmDelete(username, medicine, onDeleted) {
+  const effect = medicine.duplicate
+    ? "This is a duplicate entry. The other entry stays, with any doses already given."
+    : medicine.doses_given
+      ? `Doses already marked given for this medicine on ${shortDate(medicine.date)} will also be removed.`
+      : "This removes it from the patient's medication list.";
   Alert.alert(
-    "Delete medicine?",
-    `${medicine.medicine_name}\n${[dose(medicine), medicine.frequency, shortDate(medicine.date)].filter(Boolean).join(" · ")}\n\nThis removes it from the patient's medication list.`,
+    medicine.duplicate ? "Delete duplicate?" : "Delete medicine?",
+    `${medicine.medicine_name}\n${[dose(medicine), medicine.frequency, shortDate(medicine.date)].filter(Boolean).join(" · ")}\n\n${effect}`,
     [
       { text: "Cancel", style: "cancel" },
       {
@@ -113,7 +122,7 @@ export default function MedicationsScreen({ route }) {
 /**
  * The old "Administer medication" screen: tick each session given, with a
  * witness. Each tap is confirmed first, as a given dose cannot be undone.
- * The bin removes a wrongly entered medicine until a dose of it is given.
+ * The bin removes a duplicate or wrongly entered medicine, given or not.
  */
 function Checklist({ username, canGive, canDelete }) {
   const [date, setDate] = useState(toIsoDate());
@@ -176,7 +185,7 @@ function Checklist({ username, canGive, canDelete }) {
             <View style={styles.card}>
               <View style={styles.cardHeader}>
                 <Text style={styles.medName}>{item.medicine_name}</Text>
-                {canDelete && item.deletable && <DeleteButton onPress={() => confirmDelete(username, item, () => load("refresh"))} />}
+                {canDelete && <DeleteButton onPress={() => confirmDelete(username, item, () => load("refresh"))} />}
               </View>
               <Text style={styles.medMeta}>
                 {[dose(item), item.frequency, item.before_or_after_food].filter(Boolean).join(" · ")}
@@ -385,7 +394,7 @@ function Schedule({ username, canAdd, canDelete }) {
                 <Text style={styles.medName}>{item.medicine_name}</Text>
                 <View style={styles.headerRight}>
                   <Text style={styles.medDate}>{shortDate(item.date)}</Text>
-                  {canDelete && item.deletable && <DeleteButton onPress={() => confirmDelete(username, item, load)} />}
+                  {canDelete && <DeleteButton onPress={() => confirmDelete(username, item, load)} />}
                 </View>
               </View>
               <Text style={styles.medMeta}>

@@ -1,4 +1,4 @@
-import api, { message, unwrap } from "./api";
+import api, { message, unwrap, uploadApi } from "./api";
 
 /** The signed-in user's duties ending on `date` (their day's work), with patient name and address. */
 export const myDuties = (date) => api.get("duties/mine", { params: { date } }).then(unwrap);
@@ -22,6 +22,19 @@ export const signOut = (id, { time, position }) =>
       signout_longitude: position?.longitude ?? null,
     })
     .then(message);
+
+/** A photo of the staff member with the patient at their home, with the GPS position. */
+export const addPresencePhoto = (id, photo, position) => {
+  const form = new FormData();
+  form.append("photo", { uri: photo.uri, name: photo.name, type: photo.mimeType });
+  if (position) {
+    form.append("latitude", String(position.latitude));
+    form.append("longitude", String(position.longitude));
+  }
+  return uploadApi
+    .post(`duties/${id}/presence-photos`, form, { headers: { "Content-Type": "multipart/form-data" } })
+    .then(unwrap);
+};
 
 export const markNotAttended = (id, reason) =>
   api.post(`duties/${id}/not-attended`, { reason }).then(message);
