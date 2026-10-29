@@ -55,6 +55,12 @@ export function shortDate(iso) {
   return `${d.getDate()} ${MONTHS[d.getMonth()]} ${d.getFullYear()}`;
 }
 
+/** "28 Oct 2026", or "28 Oct 2026 → 27 Jan 2027" when the duty runs over several days. */
+export function dateRange(start, end) {
+  if (!start) return "";
+  return end && end !== start ? `${shortDate(start)} → ${shortDate(end)}` : shortDate(start);
+}
+
 /** "14:30" → "2:30 PM" */
 export function time12(time) {
   if (!time) return "";

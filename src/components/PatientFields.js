@@ -5,6 +5,7 @@ import { FilterChips } from "./Segmented";
 import SelectField from "./SelectField";
 import useReference from "../hooks/useReference";
 import { cities, packageFees, packageName, regions, servicePackages } from "../services/referenceService";
+import { SERVICE_OPTIONS, serviceChoice, serviceValue } from "../utils/services";
 import { colors } from "../theme";
 
 const GENDERS = ["male", "female", "other"].map((v) => ({ value: v, label: v.charAt(0).toUpperCase() + v.slice(1) }));
@@ -33,14 +34,23 @@ export const BLANK_PATIENT = {
   city: "",
   address: "",
   source_of_contact: "",
+  service: "",
+  service_other: "",
   service_package: "",
   fees: "",
   comments: "",
 };
 
+/** A saved patient as form values (the service splits into choice + "other" text). */
+export function patientForm(patient) {
+  const choice = serviceChoice(patient?.service);
+  return { ...BLANK_PATIENT, ...patient, service: choice.service, service_other: choice.other };
+}
+
 /** Empty strings → null and numbers as numbers, so the API's validation is happy. */
-export function patientPayload(form) {
+export function patientPayload({ service_other: serviceOther, ...form }) {
   const out = {};
+  form.service = serviceValue(form.service, serviceOther);
   Object.entries(form).forEach(([key, value]) => {
     const v = typeof value === "string" ? value.trim() : value;
     if (v === "" || v === null || v === undefined) return;
@@ -129,6 +139,17 @@ export default function PatientFields({ form, onChange, isEdit = false }) {
       <Text style={styles.label}>Source of contact</Text>
       <FilterChips options={SOURCES} value={form.source_of_contact} onChange={set("source_of_contact")} />
       <SelectField
+        label="Service"
+        value={form.service || ""}
+        options={SERVICE_OPTIONS}
+        allowClear
+        placeholder="Nursing, Care taking or Other"
+        onChange={(value) => onChange({ ...form, service: value || "", service_other: value === "other" ? form.service_other : "" })}
+      />
+      {form.service === "other" && (
+        <TextField label="Service name *" value={form.service_other || ""} onChangeText={set("service_other")} placeholder="e.g. Physiotherapy at home" />
+      )}
+      <SelectField
         label="Service package"
         value={form.service_package}
         options={packages}
@@ -138,9 +159,7 @@ export default function PatientFields({ form, onChange, isEdit = false }) {
           onChange({ ...form, service_package: value, fees: chosen?.fees != null ? String(chosen.fees) : form.fees });
         }}
       />
-      {!!form.service_package && (
-        <TextField label="Fees" value={String(form.fees ?? "")} onChangeText={set("fees")} keyboardType="decimal-pad" />
-      )}
+      <TextField label="Fees" value={String(form.fees ?? "")} onChangeText={set("fees")} keyboardType="decimal-pad" />
       <TextField label="Comments" value={form.comments || ""} onChangeText={set("comments")} multiline />
     </View>
   );

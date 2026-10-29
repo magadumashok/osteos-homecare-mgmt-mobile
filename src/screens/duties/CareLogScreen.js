@@ -14,7 +14,7 @@ import { careLogs, coverCareDay, saveCareLog, skipCareDay } from "../../services
 import { listStaff } from "../../services/staffService";
 import { can } from "../../utils/permissions";
 import { displayName } from "../../utils/format";
-import { longDate, nowTime, shortDate, time12, toIsoDate } from "../../utils/dates";
+import { longDate, nowTime, shortDate, time12, timeRange, toIsoDate } from "../../utils/dates";
 import { colors, shadow } from "../../theme";
 
 const SKIP_REASONS = ["Personal emergency", "Unwell", "Family function", "Travel"];
@@ -27,13 +27,15 @@ function tasksFor(duty, log) {
 }
 
 /**
- * One day of a caretaker's 24-hour duty: tick off the care tasks, report
- * symptoms and add notes, or skip the day with a reason. Admins see the
- * same day read-only and can give a skipped day to another caretaker.
+ * One day of a 24-hour duty, or one shift with care tasks: tick off the
+ * tasks, report symptoms and add notes, or (24-hour duties) skip the day
+ * with a reason. Admins see the same day and can give a skipped day to
+ * another caretaker.
  */
 export default function CareLogScreen({ navigation, route }) {
   const { user, permissions } = useSelector((s) => s.auth);
-  const [date, setDate] = useState(route.params?.date || toIsoDate());
+  // A shift has one update, filed under its start date; 24-hour duties have one per day.
+  const [date, setDate] = useState(route.params.duty.live_in ? route.params?.date || toIsoDate() : route.params.duty.date);
   const [duty, setDuty] = useState(route.params.duty);
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -163,7 +165,8 @@ export default function CareLogScreen({ navigation, route }) {
       );
     }
 
-    const canSkip = own && !log && date >= today;
+    // A shift is skipped with "Can't attend" on the duty instead.
+    const canSkip = duty.live_in && own && !log && date >= today;
 
     if (date > today) {
       return (
@@ -240,8 +243,12 @@ export default function CareLogScreen({ navigation, route }) {
   return (
     <AppScreen
       title={duty.patient_name || "Care log"}
-      subtitle={`24-hour care · ${shortDate(duty.date)} → ${shortDate(duty.end_date)}`}
-      headerExtra={<DateStrip date={date} onChange={setDate} />}
+      subtitle={
+        duty.live_in
+          ? `24-hour care · ${shortDate(duty.date)} → ${shortDate(duty.end_date)}`
+          : `Shift · ${timeRange(duty.start_time, duty.end_time)}`
+      }
+      headerExtra={duty.live_in ? <DateStrip date={date} onChange={setDate} /> : undefined}
     >
       {loading ? (
         <LoadingView label="Loading care log…" />

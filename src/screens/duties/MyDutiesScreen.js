@@ -9,7 +9,7 @@ import { EmptyState, ErrorState, LoadingView } from "../../components/States";
 import useDutyActions, { dutyStatus, isActionable, signInHint } from "../../hooks/useDutyActions";
 import { myDuties, skipCareDay } from "../../services/dutyService";
 import { capitalize } from "../../utils/format";
-import { fromIsoDate, shortDate, time12, timeRange, toIsoDate } from "../../utils/dates";
+import { dateRange, fromIsoDate, shortDate, time12, timeRange, toIsoDate } from "../../utils/dates";
 import { colors, shadow } from "../../theme";
 
 /** The old app's "Today's schedule" and "Schedule by date" in one screen. */
@@ -83,8 +83,12 @@ export default function MyDutiesScreen({ navigation }) {
                 </Text>
               </View>
             )}
+            <View style={styles.metaRow}>
+              <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
+              <Text style={styles.meta}>{dateRange(item.date, item.end_date)}</Text>
+            </View>
             <Text style={styles.meta}>
-              Day {day} of {total} · until {shortDate(item.end_date)}
+              Day {day} of {total}
             </Text>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#c0c8d0" />
@@ -134,6 +138,10 @@ export default function MyDutiesScreen({ navigation }) {
               </View>
             )}
             <View style={styles.metaRow}>
+              <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
+              <Text style={styles.meta}>{dateRange(item.date, item.end_date)}</Text>
+            </View>
+            <View style={styles.metaRow}>
               <View style={[styles.chip, { backgroundColor: status.bg }]}>
                 <Text style={[styles.chipText, { color: status.color }]}>{status.label}</Text>
               </View>
@@ -167,6 +175,16 @@ export default function MyDutiesScreen({ navigation }) {
         )}
 
         {actionable && status.key === "scheduled" && <Text style={styles.hint}>{signInHint(item)}</Text>}
+
+        {(item.care_tasks || []).length > 0 && (status.key === "active" || status.key === "done") && (
+          <Pressable
+            onPress={() => navigation.navigate("CareLog", { duty: item, date: item.date })}
+            style={[styles.actionButton, styles.actionGhost]}
+          >
+            <Ionicons name="clipboard-outline" size={18} color={colors.primary} />
+            <Text style={styles.actionGhostText}>Care update ({item.care_tasks.length} tasks)</Text>
+          </Pressable>
+        )}
 
         {status.key === "done" && (
           <Text style={styles.doneText}>

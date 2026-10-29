@@ -4,7 +4,7 @@ import KeyboardAwareView from "../../components/KeyboardAwareView";
 import KeyboardAwareScrollView from "../../components/KeyboardAwareScrollView";
 import AppScreen from "../../components/AppScreen";
 import { ErrorBanner, PrimaryButton } from "../../components/Form";
-import PatientFields, { BLANK_PATIENT, patientPayload } from "../../components/PatientFields";
+import PatientFields, { BLANK_PATIENT, patientForm, patientPayload } from "../../components/PatientFields";
 import { LoadingView } from "../../components/States";
 import { getPatient, registerPatient, updatePatient } from "../../services/patientService";
 
@@ -20,7 +20,7 @@ export default function PatientFormScreen({ navigation, route }) {
   useEffect(() => {
     if (!isEdit) return;
     getPatient(username)
-      .then((p) => setForm(Object.fromEntries(Object.keys(BLANK_PATIENT).map((k) => [k, p?.[k] ?? ""]))))
+      .then((p) => setForm(patientForm(Object.fromEntries(Object.keys(BLANK_PATIENT).map((k) => [k, p?.[k] ?? ""])))))
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false));
   }, [isEdit, username]);
@@ -29,6 +29,10 @@ export default function PatientFormScreen({ navigation, route }) {
     setError(null);
     if (!form.patient_name.trim() || (!isEdit && !form.country)) {
       setError("Patient name and country are required.");
+      return;
+    }
+    if (form.service === "other" && !form.service_other.trim()) {
+      setError("Enter the service name.");
       return;
     }
     setSaving(true);

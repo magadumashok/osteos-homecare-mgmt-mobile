@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
+import { FlatList, Linking, Pressable, RefreshControl, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
 import AppScreen, { HeaderIconButton } from "../../components/AppScreen";
@@ -8,8 +8,31 @@ import { EmptyState, ErrorState, LoadingView } from "../../components/States";
 import { dutyStatus } from "../../hooks/useDutyActions";
 import { listDuties } from "../../services/dutyService";
 import { capitalize } from "../../utils/format";
-import { shortDate, timeRange, toIsoDate } from "../../utils/dates";
+import { dateRange, time12, timeRange, toIsoDate } from "../../utils/dates";
 import { colors, shadow } from "../../theme";
+
+const hasPoint = (lat, lng) => lat != null && lat !== "" && lng != null && lng !== "";
+
+/** "Signed in 9:02 am · Map" — opens where the staff member was in Maps. */
+function AttendancePoint({ label, done, time, lat, lng }) {
+  if (!done) return null;
+  const located = hasPoint(lat, lng);
+  return (
+    <Pressable
+      disabled={!located}
+      onPress={() => Linking.openURL(`https://www.google.com/maps/search/?api=1&query=${lat},${lng}`)}
+      style={styles.metaRow}
+      hitSlop={6}
+      accessibilityLabel={`${label} location`}
+    >
+      <Ionicons name={located ? "location" : "location-outline"} size={13} color={located ? colors.primary : colors.textMuted} />
+      <Text style={styles.meta}>
+        {label} {time12(time)}
+        {located ? <Text style={styles.link}> · View on map</Text> : " · no location"}
+      </Text>
+    </Pressable>
+  );
+}
 
 /** Old "List of all duty schedules": every duty starting on a day; tap to reschedule. */
 export default function DutySchedulesScreen({ navigation }) {
@@ -65,13 +88,17 @@ export default function DutySchedulesScreen({ navigation }) {
               <Pressable onPress={() => navigation.navigate("DutyForm", { duty: item })} style={({ pressed }) => [styles.card, pressed && styles.pressed]}>
                 <View style={styles.header}>
                   <Text style={styles.time}>
-                    {item.live_in ? `24-hour care · until ${shortDate(item.end_date)}` : timeRange(item.start_time, item.end_time)}
+                    {item.live_in ? "24-hour care" : timeRange(item.start_time, item.end_time)}
                   </Text>
                   <View style={[styles.chip, { backgroundColor: status.bg }]}>
                     <Text style={[styles.chipText, { color: status.color }]}>{status.label}</Text>
                   </View>
                 </View>
                 <Text style={styles.patient}>{item.patient_name || item.patient_id}</Text>
+                <View style={styles.metaRow}>
+                  <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
+                  <Text style={styles.meta}>{dateRange(item.date, item.end_date)}</Text>
+                </View>
                 <View style={styles.metaRow}>
                   <Ionicons name="person-outline" size={13} color={colors.textMuted} />
                   <Text style={styles.meta}>{[item.staff_name || item.staff_id, capitalize(item.role)].filter(Boolean).join(" · ")}</Text>
@@ -82,6 +109,8 @@ export default function DutySchedulesScreen({ navigation }) {
                     <Text style={styles.meta}>{item.driver}</Text>
                   </View>
                 )}
+                <AttendancePoint label="Signed in" done={item.sign_in} time={item.signin_time} lat={item.signin_latitude} lng={item.signin_longitude} />
+                <AttendancePoint label="Signed out" done={item.sign_out} time={item.signout_time} lat={item.signout_latitude} lng={item.signout_longitude} />
               </Pressable>
             );
           }}
@@ -103,4 +132,5 @@ const styles = StyleSheet.create({
   patient: { fontSize: 16, fontWeight: "700", color: colors.text },
   metaRow: { flexDirection: "row", alignItems: "center", gap: 6 },
   meta: { fontSize: 13, color: colors.textMuted },
+  link: { color: colors.primary, fontWeight: "600" },
 });

@@ -111,7 +111,7 @@ export default function DutyDetailScreen({ navigation, route }) {
           </View>
           <Row icon="calendar-outline" label={duty.live_in ? "Stay" : "Date"} value={dateText} />
           <Row icon="time-outline" label="Time" value={duty.live_in ? "Round the clock" : timeRange(duty.start_time, duty.end_time)} />
-          <Row icon="list-outline" label="Care tasks" value={duty.live_in ? (duty.care_tasks || []).join(", ") : null} />
+          <Row icon="list-outline" label="Care tasks" value={(duty.care_tasks || []).join(", ")} />
           <Row icon="briefcase-outline" label="Role" value={capitalize(duty.role)} />
           <Row icon="pricetag-outline" label="Service package" value={duty.service_package} />
           <Row icon="car-outline" label="Driver" value={duty.driver} />
@@ -161,9 +161,9 @@ export default function DutyDetailScreen({ navigation, route }) {
             />
           </View>
         )}
-        {duty.live_in && (
+        {(duty.live_in || (duty.care_tasks || []).length > 0) && (
           <PrimaryButton
-            title="Daily care update"
+            title={duty.live_in ? "Daily care update" : "Care update for this shift"}
             icon="clipboard-outline"
             onPress={() => navigation.navigate("CareLog", { duty, date: route.params?.date })}
           />
