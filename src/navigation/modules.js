@@ -26,6 +26,17 @@ export const DASHBOARD_MODULES = [
     screen: "MyDuties",
   },
   {
+    id: "my-salary",
+    title: "My Salary",
+    subtitle: "Days worked and earnings",
+    icon: "wallet",
+    palette: "teal",
+    permissions: ["attendance.record"],
+    hideForRole: "transport",
+    staffOnly: true,
+    screen: "MySalary",
+  },
+  {
     id: "my-trips",
     title: "My Trips",
     subtitle: "Pickups and drops",
@@ -168,6 +179,8 @@ export function visibleModules(user, permissions) {
   return DASHBOARD_MODULES.filter((module) => {
     if (module.role && !hasRole(user, module.role)) return false;
     if (module.hideForRole && hasRole(user, module.hideForRole)) return false;
+    // The center owner's account is not paid by the day.
+    if (module.staffOnly && user?.user_type !== "staff") return false;
     return can(permissions, module.permissions);
   });
 }

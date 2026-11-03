@@ -57,10 +57,14 @@ export default function MyDutiesScreen({ navigation }) {
     }
   };
 
-  /** A caretaker's 24-hour duty: shown every day of the stay, logged instead of signed in. */
+  /** A 24-hour duty: shown every day of the stay, signed in and out once a day and logged. */
   const renderLiveIn = (item) => {
     const day = Math.round((fromIsoDate(date) - fromIsoDate(item.date)) / 86400000) + 1;
     const total = Math.round((fromIsoDate(item.end_date) - fromIsoDate(item.date)) / 86400000) + 1;
+    const status = dutyStatus(item);
+    const open = item.sign_in && !item.sign_out;
+    const canSignIn = date === toIsoDate() && !item.sign_in && status.key === "live_in";
+    const busy = busyId === item._id;
     return (
       <Pressable
         onPress={() => navigation.navigate("DutyDetail", { duty: item, date })}
@@ -87,14 +91,40 @@ export default function MyDutiesScreen({ navigation }) {
               <Ionicons name="calendar-outline" size={13} color={colors.textMuted} />
               <Text style={styles.meta}>{dateRange(item.date, item.end_date)}</Text>
             </View>
-            <Text style={styles.meta}>
-              Day {day} of {total}
-            </Text>
+            <View style={styles.metaRow}>
+              <View style={[styles.chip, { backgroundColor: status.bg }]}>
+                <Text style={[styles.chipText, { color: status.color }]}>{status.label}</Text>
+              </View>
+              <Text style={styles.meta}>
+                Day {day} of {total}
+              </Text>
+            </View>
           </View>
           <Ionicons name="chevron-forward" size={20} color="#c0c8d0" />
         </View>
+        {(canSignIn || open) && (
+          <View style={styles.actions}>
+            {busy ? (
+              <ActivityIndicator color={colors.primary} style={styles.flex} />
+            ) : open ? (
+              <Pressable onPress={() => confirmSignOut(item)} style={[styles.actionButton, styles.signOut]}>
+                <Ionicons name="log-out-outline" size={18} color={colors.onPrimary} />
+                <Text style={styles.actionText}>
+                  Sign out{item.attendance_date && item.attendance_date !== date ? ` (${shortDate(item.attendance_date)})` : ""}
+                </Text>
+              </Pressable>
+            ) : (
+              <Pressable onPress={() => confirmSignIn(item)} style={styles.actionButton}>
+                <Ionicons name="log-in-outline" size={18} color={colors.onPrimary} />
+                <Text style={styles.actionText}>Sign in for today</Text>
+              </Pressable>
+            )}
+          </View>
+        )}
+        {canSignIn && <Text style={styles.hint}>{signInHint(item)}</Text>}
+        {item.sign_out && <Text style={styles.doneText}>Day completed {timeRange(item.signin_time, item.signout_time)}</Text>}
         <View style={styles.actions}>
-          {date >= toIsoDate() && (
+          {date >= toIsoDate() && !item.sign_in && (
             <Pressable onPress={() => setSkippingDay(item)} style={[styles.actionButton, styles.actionGhost]}>
               <Text style={styles.actionGhostText}>Can't come</Text>
             </Pressable>

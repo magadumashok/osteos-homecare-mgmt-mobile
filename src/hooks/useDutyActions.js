@@ -6,12 +6,15 @@ import { currentPosition } from "../utils/location";
 
 /** Where a duty stands, for the status chip and which buttons to show. */
 export function dutyStatus(duty) {
-  // Caretakers stay round the clock between two dates; they log each day instead of signing in.
+  // 24-hour stays run between two dates and are signed in and out once a day
+  // (the server sends that day's sign_in / sign_out on the duty).
   if (duty.live_in) {
     const today = toIsoDate();
     if (duty.not_attended) return { key: "missed", label: "Cancelled", color: "#b91c1c", bg: "#fef2f2" };
+    if (duty.sign_in && !duty.sign_out) return { key: "active", label: "On duty", color: "#e65100", bg: "#fff3e0" };
     if (duty.date > today) return { key: "upcoming", label: "Upcoming", color: "#1565c0", bg: "#e3f2fd" };
-    if ((duty.end_date || duty.date) < today) return { key: "done", label: "Ended", color: "#2e7d32", bg: "#e8f5e9" };
+    if ((duty.end_date || duty.date) < today) return { key: "ended", label: "Ended", color: "#2e7d32", bg: "#e8f5e9" };
+    if (duty.sign_out) return { key: "done", label: "Done for the day", color: "#2e7d32", bg: "#e8f5e9" };
     return { key: "live_in", label: "24-hour care", color: "#6a1b9a", bg: "#f3e5f5" };
   }
   if (duty.not_attended) return { key: "missed", label: "Not attended", color: "#b91c1c", bg: "#fef2f2" };
@@ -23,6 +26,8 @@ export function dutyStatus(duty) {
 /** Sign-in/out happens on the day of the visit, as in the old "today's schedule". */
 export function isActionable(duty) {
   const today = toIsoDate();
+  // A 24-hour day still open (e.g. handover next morning) can always be signed out.
+  if (duty.live_in && duty.sign_in && !duty.sign_out) return true;
   return duty.date <= today && (duty.end_date || duty.date) >= today;
 }
 
@@ -53,6 +58,7 @@ export function dutyWindow(duty) {
 
 /** "Sign in between 8:55 am and 9:05 am" for the card under the button. */
 export function signInHint(duty) {
+  if (duty.live_in) return "Sign in when you start today's care, and sign out at handover.";
   const { signInFrom, signInUntil } = dutyWindow(duty);
   return `Sign in between ${clock(signInFrom)} and ${clock(signInUntil)}`;
 }
@@ -81,6 +87,7 @@ export default function useDutyActions(onChanged) {
   };
 
   const confirmSignIn = (duty) => {
+    if (duty.live_in) return confirmDay(duty, "in");
     const { signInFrom, signInUntil } = dutyWindow(duty);
     const now = new Date();
     if (now < signInFrom) {
@@ -109,11 +116,38 @@ export default function useDutyActions(onChanged) {
     ]);
   };
 
+  /** A day of a 24-hour stay: no time window, a day counts once signed in and out. */
+  const confirmDay = (duty, direction) => {
+    const signingIn = direction === "in";
+    const who = duty.patient_name || "this patient";
+    return Alert.alert(
+      signingIn ? "Sign in for today" : "Sign out",
+      signingIn ? `Start today's care with ${who} now?` : `End your day with ${who} now? Sign out at handover.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: signingIn ? "Sign in" : "Sign out",
+          onPress: () => {
+            const time = nowTime();
+            const send = signingIn ? signIn : signOut;
+            run(
+              duty,
+              async () => send(duty._id, { time, position: await currentPosition() }),
+              signingIn ? "Signed in" : "Signed out",
+              signingIn ? { sign_in: true, signin_time: time } : { sign_out: true, signout_time: time },
+            );
+          },
+        },
+      ],
+    );
+  };
+
   const confirmSignOut = (duty) => {
     if (!duty.sign_in) {
       Alert.alert("Not signed in", "Sign in to this duty first.");
       return;
     }
+    if (duty.live_in) return confirmDay(duty, "out");
     const { end } = dutyWindow(duty);
     if (new Date() < end) {
       Alert.alert("Session not over", `You can sign out from ${clock(end)}, when the session ends.`);

@@ -10,6 +10,7 @@ import ForgotPasswordScreen from "../screens/auth/ForgotPasswordScreen";
 
 import DashboardScreen from "../screens/home/DashboardScreen";
 import ProfileScreen from "../screens/home/ProfileScreen";
+import MySalaryScreen from "../screens/home/MySalaryScreen";
 import ChangePasswordScreen from "../screens/home/ChangePasswordScreen";
 import StaffDirectoryScreen from "../screens/home/StaffDirectoryScreen";
 
@@ -66,6 +67,7 @@ function MainStack() {
     <Stack.Navigator screenOptions={screenOptions}>
       <Stack.Screen name="Dashboard" component={DashboardScreen} />
       <Stack.Screen name="Profile" component={ProfileScreen} />
+      <Stack.Screen name="MySalary" component={MySalaryScreen} />
       <Stack.Screen name="ChangePassword" component={ChangePasswordScreen} />
       <Stack.Screen name="StaffDirectory" component={StaffDirectoryScreen} />
 

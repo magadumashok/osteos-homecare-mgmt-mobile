@@ -126,7 +126,14 @@ export default function DutyDetailScreen({ navigation, route }) {
           )}
         </View>
 
-        {actionable && status.key === "scheduled" && (
+        {duty.live_in && status.key === "live_in" && !duty.sign_in && duty.staff_id === user?.username && (
+          <>
+            <PrimaryButton title="Sign in for today" icon="log-in-outline" loading={busy} onPress={() => confirmSignIn(duty)} />
+            <Text style={styles.hint}>{signInHint(duty)}</Text>
+          </>
+        )}
+
+        {!duty.live_in && actionable && status.key === "scheduled" && (
           <>
             <View style={styles.buttons}>
               <PrimaryButton title="Can't attend" variant="outline" onPress={() => setSkipping(true)} style={styles.flex} />
