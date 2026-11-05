@@ -1,5 +1,14 @@
 import { useState } from "react";
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useDispatch, useSelector } from "react-redux";
 import AppScreen from "../../components/AppScreen";
@@ -47,24 +56,37 @@ export default function ProfileScreen({ navigation }) {
   const onLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
       { text: "Cancel", style: "cancel" },
-      { text: "Logout", style: "destructive", onPress: () => dispatch(thunkLogout()) },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: () => dispatch(thunkLogout()),
+      },
     ]);
   };
 
-  const address = user?.permanent_address || user?.temporary_address;
+  const address = user?.permanent_address || user?.address;
   const addressText =
     typeof address === "object" && address
-      ? [address.address, address.city, address.region, address.country].filter(Boolean).join(", ")
+      ? [address.address, address.city, address.region, address.country]
+          .filter(Boolean)
+          .join(", ")
       : user?.address;
 
   return (
     <AppScreen title="My Profile">
       <ScrollView contentContainerStyle={styles.content}>
         <View style={styles.hero}>
-          <Pressable onPress={onChangePhoto} disabled={uploading} accessibilityLabel="Change profile photo">
+          <Pressable
+            onPress={onChangePhoto}
+            disabled={uploading}
+            accessibilityLabel="Change profile photo"
+          >
             <View style={styles.avatar}>
               {user?.profile_image ? (
-                <Image source={{ uri: user.profile_image }} style={styles.avatarImage} />
+                <Image
+                  source={{ uri: user.profile_image }}
+                  style={styles.avatarImage}
+                />
               ) : (
                 <Text style={styles.avatarText}>{initials(name)}</Text>
               )}
@@ -79,15 +101,29 @@ export default function ProfileScreen({ navigation }) {
             </View>
           </Pressable>
           <Text style={styles.name}>{name}</Text>
-          {!!roleLabel(user) && <Text style={styles.role}>{roleLabel(user)}</Text>}
+          {!!roleLabel(user) && (
+            <Text style={styles.role}>{roleLabel(user)}</Text>
+          )}
         </View>
 
         <View style={styles.card}>
           <Row icon="person-outline" label="Username" value={user?.username} />
-          <Row icon="call-outline" label="Mobile" value={user?.mobile ? String(user.mobile) : null} />
+          <Row
+            icon="call-outline"
+            label="Mobile"
+            value={user?.mobile ? String(user.mobile) : null}
+          />
           <Row icon="mail-outline" label="Email" value={user?.email} />
-          <Row icon="business-outline" label="Homecare" value={homecare?.name} />
-          <Row icon="ribbon-outline" label="Specialization" value={user?.specialization} />
+          <Row
+            icon="business-outline"
+            label="Homecare"
+            value={homecare?.name}
+          />
+          <Row
+            icon="ribbon-outline"
+            label="Specialization"
+            value={user?.specialization}
+          />
           <Row icon="location-outline" label="Address" value={addressText} />
         </View>
 
@@ -98,7 +134,11 @@ export default function ProfileScreen({ navigation }) {
             variant="outline"
             onPress={() => navigation.navigate("ChangePassword")}
           />
-          <PrimaryButton title="Logout" icon="log-out-outline" onPress={onLogout} />
+          <PrimaryButton
+            title="Logout"
+            icon="log-out-outline"
+            onPress={onLogout}
+          />
         </View>
       </ScrollView>
     </AppScreen>
@@ -140,8 +180,19 @@ const styles = StyleSheet.create({
   },
   name: { fontSize: 20, fontWeight: "700", color: colors.text, marginTop: 6 },
   role: { fontSize: 14, color: colors.textMuted },
-  card: { backgroundColor: colors.surface, borderRadius: 16, padding: 6, ...shadow },
-  row: { flexDirection: "row", alignItems: "center", gap: 14, paddingHorizontal: 12, paddingVertical: 12 },
+  card: {
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    padding: 6,
+    ...shadow,
+  },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 12,
+  },
   rowText: { flex: 1 },
   rowLabel: { fontSize: 12, color: colors.textFaint },
   rowValue: { fontSize: 15, color: colors.text, marginTop: 2 },

@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Alert } from "react-native";
 import { markNotAttended, signIn, signOut } from "../services/dutyService";
-import { fromIsoDate, nowTime, time12, toIsoDate } from "../utils/dates";
+import { fromIsoDate, nowTime, shortDate, time12, toIsoDate } from "../utils/dates";
 import { currentPosition } from "../utils/location";
 
 /** Where a duty stands, for the status chip and which buttons to show. */
@@ -31,8 +31,12 @@ export function isActionable(duty) {
   return duty.date <= today && (duty.end_date || duty.date) >= today;
 }
 
-// Sign-in is allowed this many minutes either side of the start time (the server checks too).
-const GRACE_MINUTES = 5;
+// Sign-in opens this long before the start time and closes this long after it.
+// The server has the same limits and has the final say (config/homecare.php).
+const EARLY_MINUTES = 10;
+const LATE_MINUTES = 10;
+// Sign-out opens this long before the end time and has no closing time.
+const SIGNOUT_EARLY_MINUTES = 10;
 
 function at(date, time) {
   const d = fromIsoDate(date);
@@ -51,14 +55,39 @@ export function dutyWindow(duty) {
   return {
     start,
     end,
-    signInFrom: new Date(start.getTime() - GRACE_MINUTES * 60000),
-    signInUntil: new Date(start.getTime() + GRACE_MINUTES * 60000),
+    signInFrom: new Date(start.getTime() - EARLY_MINUTES * 60000),
+    signInUntil: new Date(start.getTime() + LATE_MINUTES * 60000),
+    signOutFrom: new Date(end.getTime() - SIGNOUT_EARLY_MINUTES * 60000),
   };
+}
+
+/** Today's sign-in window around a 24-hour duty's daily start time. */
+function dayWindow(duty) {
+  const start = at(toIsoDate(), duty.day_start_time);
+  return {
+    start,
+    signInFrom: new Date(start.getTime() - EARLY_MINUTES * 60000),
+    signInUntil: new Date(start.getTime() + LATE_MINUTES * 60000),
+  };
+}
+
+/** Is sign-in open around the daily start time (even across midnight)? */
+function inDayWindow(duty, now = new Date()) {
+  const [h, m] = String(duty.day_start_time).split(":").map(Number);
+  const gap = now.getHours() * 60 + now.getMinutes() - (h * 60 + m);
+  // Minutes after the start (negative before it), the short way round the clock.
+  const offset = ((gap + 720 + 1440) % 1440) - 720;
+  return offset >= -EARLY_MINUTES && offset <= LATE_MINUTES;
 }
 
 /** "Sign in between 8:55 am and 9:05 am" for the card under the button. */
 export function signInHint(duty) {
-  if (duty.live_in) return "Sign in when you start today's care, and sign out at handover.";
+  if (duty.live_in) {
+    if (!duty.day_start_time) return "Sign in when you start today's care, and sign out at handover.";
+    const { start, signInFrom, signInUntil } = dayWindow(duty);
+    const signOutFrom = new Date(start.getTime() - SIGNOUT_EARLY_MINUTES * 60000);
+    return `Sign in between ${clock(signInFrom)} and ${clock(signInUntil)}. Sign out from ${clock(signOutFrom)} the next day.`;
+  }
   const { signInFrom, signInUntil } = dutyWindow(duty);
   return `Sign in between ${clock(signInFrom)} and ${clock(signInUntil)}`;
 }
@@ -91,13 +120,13 @@ export default function useDutyActions(onChanged) {
     const { signInFrom, signInUntil } = dutyWindow(duty);
     const now = new Date();
     if (now < signInFrom) {
-      Alert.alert("Too early", `You can sign in from ${clock(signInFrom)} (${GRACE_MINUTES} minutes before the visit starts).`);
+      Alert.alert("Too early", `You can sign in from ${clock(signInFrom)} (${EARLY_MINUTES} minutes before the visit starts).`);
       return;
     }
     if (now > signInUntil) {
       Alert.alert(
         "Sign-in closed",
-        `Sign-in was open until ${clock(signInUntil)}, ${GRACE_MINUTES} minutes after the start time. Ask your coordinator to reschedule the duty.`,
+        `Sign-in was open until ${clock(signInUntil)}, ${LATE_MINUTES} minutes after the start time. Ask your coordinator to reschedule the duty.`,
       );
       return;
     }
@@ -116,10 +145,27 @@ export default function useDutyActions(onChanged) {
     ]);
   };
 
-  /** A day of a 24-hour stay: no time window, a day counts once signed in and out. */
+  /**
+   * A day of a 24-hour stay: signed in around the daily start time and out
+   * from that time the next day (duties without a start time have no window).
+   * The server checks too; a day it has not named is left for it to judge.
+   */
   const confirmDay = (duty, direction) => {
     const signingIn = direction === "in";
     const who = duty.patient_name || "this patient";
+    if (duty.day_start_time && signingIn && !inDayWindow(duty)) {
+      const { signInFrom, signInUntil } = dayWindow(duty);
+      Alert.alert("Sign-in closed", `You can sign in between ${clock(signInFrom)} and ${clock(signInUntil)}. If you missed it, ask your coordinator.`);
+      return;
+    }
+    if (duty.day_start_time && !signingIn && duty.attendance_date) {
+      const end = new Date(at(duty.attendance_date, duty.day_start_time).getTime() + 86400000);
+      const from = new Date(end.getTime() - SIGNOUT_EARLY_MINUTES * 60000);
+      if (new Date() < from) {
+        Alert.alert("24 hours not over", `You can sign out from ${clock(from)} on ${shortDate(toIsoDate(from))}.`);
+        return;
+      }
+    }
     return Alert.alert(
       signingIn ? "Sign in for today" : "Sign out",
       signingIn ? `Start today's care with ${who} now?` : `End your day with ${who} now? Sign out at handover.`,
@@ -148,9 +194,9 @@ export default function useDutyActions(onChanged) {
       return;
     }
     if (duty.live_in) return confirmDay(duty, "out");
-    const { end } = dutyWindow(duty);
-    if (new Date() < end) {
-      Alert.alert("Session not over", `You can sign out from ${clock(end)}, when the session ends.`);
+    const { end, signOutFrom } = dutyWindow(duty);
+    if (new Date() < signOutFrom) {
+      Alert.alert("Session not over", `You can sign out from ${clock(signOutFrom)}. The session ends at ${clock(end)}.`);
       return;
     }
     return Alert.alert("Sign out", `Finish your visit with ${duty.patient_name || "this patient"} now?`, [

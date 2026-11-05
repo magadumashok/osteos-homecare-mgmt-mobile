@@ -57,8 +57,9 @@ function monthsLater(date, n) {
  *  - Shift: set start and end times (5, 10, 12 hours…), on one day or every
  *    (or every other) day up to a last day — one duty per day, each signed
  *    in and out with location. A shift ending before it starts runs overnight.
- *  - 24 hours: stays with the patient from a start to an end date and sends
- *    a daily update instead of signing in; no times, driver or repeat.
+ *  - 24 hours: stays with the patient from a start to an end date, signs in
+ *    and out around a daily start time and sends a daily update; no shift
+ *    times, driver or repeat.
  * Service and fees start from the patient's registration.
  */
 export default function DutyFormScreen({ navigation, route }) {
@@ -79,6 +80,7 @@ export default function DutyFormScreen({ navigation, route }) {
       hours: existing?.live_in ? "24h" : "shift",
       date: startDate,
       end_date: existing?.live_in ? existing.end_date : startDate,
+      day_start_time: existing?.live_in ? existing.day_start_time || "" : "08:00",
       start_time: existing && !existing.live_in ? existing.start_time : "08:00",
       end_time: existing && !existing.live_in ? existing.end_time : "20:00",
       service: choice.service,
@@ -183,7 +185,14 @@ export default function DutyFormScreen({ navigation, route }) {
     try {
       let message;
       if (liveIn) {
-        const stay = { ...common, live_in: true, date: form.date, end_date: form.end_date, care_tasks: tasks };
+        const stay = {
+          ...common,
+          live_in: true,
+          date: form.date,
+          end_date: form.end_date,
+          day_start_time: form.day_start_time || null,
+          care_tasks: tasks,
+        };
         if (isEdit) {
           const { patient_id, ...changes } = stay;
           message = await rescheduleDuty(existing._id, changes);
@@ -254,7 +263,7 @@ export default function DutyFormScreen({ navigation, route }) {
           <Segmented options={HOURS} value={form.hours} onChange={setHours} />
           <Text style={styles.hint}>
             {liveIn
-              ? "Stays with the patient round the clock. No sign in or out; they send a daily update instead."
+              ? "Stays with the patient round the clock. Signs in within 10 minutes of the daily start time, signs out from 10 minutes before that time the next day, and sends a daily update."
               : "Works set hours each day and signs in and out every day (with location)."}
           </Text>
 
@@ -306,9 +315,12 @@ export default function DutyFormScreen({ navigation, route }) {
               </>
             )}
             {liveIn && (
-              <Text style={styles.hint}>
-                {daysBetween(form.date, form.end_date) + 1} days. They see this duty under My Duties every day until {shortDate(form.end_date)}.
-              </Text>
+              <>
+                <DateField label="Daily start time" value={form.day_start_time} onChange={set("day_start_time")} mode="time" placeholder="Not set" />
+                <Text style={styles.hint}>
+                  {daysBetween(form.date, form.end_date) + 1} days. They see this duty under My Duties every day until {shortDate(form.end_date)}.
+                </Text>
+              </>
             )}
           </View>
 

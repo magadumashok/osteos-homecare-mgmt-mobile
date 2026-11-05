@@ -110,7 +110,7 @@ export default function DutyDetailScreen({ navigation, route }) {
             <Text style={[styles.chipText, { color: status.color }]}>{status.label}</Text>
           </View>
           <Row icon="calendar-outline" label={duty.live_in ? "Stay" : "Date"} value={dateText} />
-          <Row icon="time-outline" label="Time" value={duty.live_in ? "Round the clock" : timeRange(duty.start_time, duty.end_time)} />
+          <Row icon="time-outline" label="Time" value={duty.live_in ? `Round the clock${duty.day_start_time ? ` from ${time12(duty.day_start_time)}` : ""}` : timeRange(duty.start_time, duty.end_time)} />
           <Row icon="list-outline" label="Care tasks" value={(duty.care_tasks || []).join(", ")} />
           <Row icon="briefcase-outline" label="Role" value={capitalize(duty.role)} />
           <Row icon="pricetag-outline" label="Service package" value={duty.service_package} />
