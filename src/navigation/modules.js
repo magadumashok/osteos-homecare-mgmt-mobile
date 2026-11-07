@@ -107,7 +107,9 @@ export const DASHBOARD_MODULES = [
     subtitle: "Daily care logs and cover",
     icon: "heart",
     palette: "purple",
-    permissions: ["schedules.manage"],
+    permissions: ["patients.view_all"],
+    // Caretakers open it too, and the server gives them only their own updates.
+    alsoForRole: "caretaker",
     screen: "CareUpdates",
   },
   // Short Visit is not needed for now; uncomment to bring it back
@@ -177,6 +179,7 @@ export const DASHBOARD_MODULES = [
 
 export function visibleModules(user, permissions) {
   return DASHBOARD_MODULES.filter((module) => {
+    if (module.alsoForRole && hasRole(user, module.alsoForRole)) return true;
     if (module.role && !hasRole(user, module.role)) return false;
     if (module.hideForRole && hasRole(user, module.hideForRole)) return false;
     // The center owner's account is not paid by the day.
