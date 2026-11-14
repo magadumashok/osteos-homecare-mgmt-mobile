@@ -2,6 +2,9 @@ import api, { message, unwrap, uploadApi } from "./api";
 
 export const listPatients = () => api.get("patients").then(unwrap);
 
+/** Every admitted patient; ones not assigned to the user come with basic details only and `assigned: false`. */
+export const listRegisteredPatients = () => api.get("patients", { params: { scope: "registered" } }).then(unwrap);
+
 export const getPatient = (username) =>
   api.get(`patients/${encodeURIComponent(username)}`).then(unwrap);
 

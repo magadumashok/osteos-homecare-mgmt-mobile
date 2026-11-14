@@ -21,7 +21,12 @@ const HOURS = [
   { value: "shift", label: "Shift (set hours)", icon: "time-outline" },
   { value: "24h", label: "24 hours", icon: "moon-outline" },
 ];
-const STAYS = [1, 3, 6].map((n) => ({ value: n, label: `${n} month${n > 1 ? "s" : ""}` }));
+// Quick end dates: the period counts the start day (7 days from the 1st ends on the 7th).
+const STAYS = [
+  { value: "7d", label: "7 days" },
+  { value: "15d", label: "15 days" },
+  { value: "1m", label: "1 month" },
+];
 const SHIFT_HOURS = [5, 8, 10, 12].map((h) => ({ value: h, label: `${h} h` }));
 const REPEATS = [
   { value: 1, label: "Every day" },
@@ -50,6 +55,12 @@ function monthsLater(date, n) {
   const start = fromIsoDate(date);
   const monthLength = new Date(start.getFullYear(), start.getMonth() + n + 1, 0).getDate();
   return toIsoDate(new Date(start.getFullYear(), start.getMonth() + n, Math.min(start.getDate(), monthLength) - 1));
+}
+
+/** The last day of a STAYS period ("7d", "15d", "1m") starting on `date`. */
+function periodEnd(date, period) {
+  const n = parseInt(period, 10);
+  return period.endsWith("m") ? monthsLater(date, n) : addDays(date, n - 1);
 }
 
 /**
@@ -283,8 +294,8 @@ export default function DutyFormScreen({ navigation, route }) {
             {(liveIn || !isEdit) && (
               <FilterChips
                 options={STAYS}
-                value={STAYS.find((s) => monthsLater(form.date, s.value) === form.end_date)?.value}
-                onChange={(n) => set("end_date")(monthsLater(form.date, n))}
+                value={STAYS.find((s) => periodEnd(form.date, s.value) === form.end_date)?.value}
+                onChange={(p) => set("end_date")(periodEnd(form.date, p))}
               />
             )}
 
