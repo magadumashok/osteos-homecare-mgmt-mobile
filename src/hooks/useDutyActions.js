@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Alert } from "react-native";
+import NotAttendedModal from "../components/NotAttendedModal";
 import { markNotAttended, signIn, signOut } from "../services/dutyService";
 import { fromIsoDate, nowTime, shortDate, time12, toIsoDate } from "../utils/dates";
 import { currentPosition } from "../utils/location";
@@ -33,10 +34,14 @@ export function isActionable(duty) {
 
 // Sign-in opens this long before the start time and closes this long after it.
 // The server has the same limits and has the final say (config/homecare.php).
-const EARLY_MINUTES = 10;
-const LATE_MINUTES = 10;
-// Sign-out opens this long before the end time and has no closing time.
-const SIGNOUT_EARLY_MINUTES = 10;
+const EARLY_MINUTES = 30;
+const LATE_MINUTES = 30;
+// Sign-out is open this long before to this long after the end time. Earlier
+// needs a reason (admins are notified); later only a coordinator can sign out.
+const SIGNOUT_EARLY_MINUTES = 30;
+const SIGNOUT_LATE_MINUTES = 30;
+
+const EARLY_REASONS = ["Patient asked me to leave", "Patient admitted to hospital", "Personal emergency", "Feeling unwell"];
 
 function at(date, time) {
   const d = fromIsoDate(date);
@@ -58,6 +63,7 @@ export function dutyWindow(duty) {
     signInFrom: new Date(start.getTime() - EARLY_MINUTES * 60000),
     signInUntil: new Date(start.getTime() + LATE_MINUTES * 60000),
     signOutFrom: new Date(end.getTime() - SIGNOUT_EARLY_MINUTES * 60000),
+    signOutUntil: new Date(end.getTime() + SIGNOUT_LATE_MINUTES * 60000),
   };
 }
 
@@ -98,6 +104,8 @@ export function signInHint(duty) {
  */
 export default function useDutyActions(onChanged) {
   const [busyId, setBusyId] = useState(null);
+  // Signing out before the window opens: { duty, end, patch } while asking why.
+  const [early, setEarly] = useState(null);
 
   /** Returns true on success. `patch` is applied locally via onChanged(patch). */
   const run = async (duty, request, done, patch) => {
@@ -161,10 +169,10 @@ export default function useDutyActions(onChanged) {
     if (duty.day_start_time && !signingIn && duty.attendance_date) {
       const end = new Date(at(duty.attendance_date, duty.day_start_time).getTime() + 86400000);
       const from = new Date(end.getTime() - SIGNOUT_EARLY_MINUTES * 60000);
-      if (new Date() < from) {
-        Alert.alert("24 hours not over", `You can sign out from ${clock(from)} on ${shortDate(toIsoDate(from))}.`);
-        return;
-      }
+      const until = new Date(end.getTime() + SIGNOUT_LATE_MINUTES * 60000);
+      const now = new Date();
+      if (now > until) return signOutClosed(until);
+      if (now < from) return askEarlyReason(duty, end, "24 hours");
     }
     return Alert.alert(
       signingIn ? "Sign in for today" : "Sign out",
@@ -194,11 +202,10 @@ export default function useDutyActions(onChanged) {
       return;
     }
     if (duty.live_in) return confirmDay(duty, "out");
-    const { end, signOutFrom } = dutyWindow(duty);
-    if (new Date() < signOutFrom) {
-      Alert.alert("Session not over", `You can sign out from ${clock(signOutFrom)}. The session ends at ${clock(end)}.`);
-      return;
-    }
+    const { end, signOutFrom, signOutUntil } = dutyWindow(duty);
+    const now = new Date();
+    if (now > signOutUntil) return signOutClosed(signOutUntil);
+    if (now < signOutFrom) return askEarlyReason(duty, end, "session");
     return Alert.alert("Sign out", `Finish your visit with ${duty.patient_name || "this patient"} now?`, [
       { text: "Cancel", style: "cancel" },
       {
@@ -214,8 +221,48 @@ export default function useDutyActions(onChanged) {
     ]);
   };
 
+  const signOutClosed = (until) =>
+    Alert.alert(
+      "Sign-out closed",
+      `Sign-out was open until ${clock(until)} on ${shortDate(toIsoDate(until))}, ${SIGNOUT_LATE_MINUTES} minutes after the end time. Ask your coordinator to sign you out.`,
+    );
+
+  /** Leaving more than SIGNOUT_EARLY_MINUTES before the end: warn, then ask why. */
+  const askEarlyReason = (duty, end, what) =>
+    Alert.alert(
+      "Leaving early?",
+      `The ${what} ends at ${clock(end)}. Signing out more than ${SIGNOUT_EARLY_MINUTES} minutes early needs a reason, and your admin will be notified.`,
+      [
+        { text: "Cancel", style: "cancel" },
+        { text: "Give reason", onPress: () => setEarly({ duty }) },
+      ],
+    );
+
+  const submitEarly = (reason) => {
+    const { duty } = early;
+    setEarly(null);
+    const time = nowTime();
+    run(
+      duty,
+      async () => signOut(duty._id, { time, position: await currentPosition(), earlyReason: reason }),
+      "Signed out. Your admin has been told why you left early.",
+      { sign_out: true, signout_time: time, early_signout: true, early_signout_reason: reason },
+    );
+  };
+
+  const earlySignOutModal = (
+    <NotAttendedModal
+      visible={!!early}
+      onClose={() => setEarly(null)}
+      onSubmit={submitEarly}
+      title="Reason for leaving early"
+      subtitle="This is recorded on the duty and sent to your admin."
+      reasons={EARLY_REASONS}
+    />
+  );
+
   const notAttended = (duty, reason) =>
     run(duty, () => markNotAttended(duty._id, reason), "Duty updated", { not_attended: true, not_attended_reason: reason });
 
-  return { busyId, confirmSignIn, confirmSignOut, notAttended };
+  return { busyId, confirmSignIn, confirmSignOut, notAttended, earlySignOutModal };
 }

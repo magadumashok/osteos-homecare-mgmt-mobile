@@ -44,7 +44,7 @@ export default function MyDutiesScreen({ navigation }) {
     }, [load]),
   );
 
-  const { busyId, confirmSignIn, confirmSignOut, notAttended } = useDutyActions(() => load("refresh"));
+  const { busyId, confirmSignIn, confirmSignOut, notAttended, earlySignOutModal } = useDutyActions(() => load("refresh"));
   const [skippingDay, setSkippingDay] = useState(null);
 
   const skipDay = async (duty, reason) => {
@@ -270,6 +270,7 @@ export default function MyDutiesScreen({ navigation }) {
         subtitle="Your coordinator will be told and can send another caretaker."
         reasons={["Personal emergency", "Unwell", "Family function", "Travel"]}
       />
+      {earlySignOutModal}
     </AppScreen>
   );
 }

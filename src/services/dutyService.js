@@ -14,9 +14,11 @@ export const signIn = (id, { time, position }) =>
     })
     .then(message);
 
-export const signOut = (id, { time, position }) =>
+/** `earlyReason` is required by the server when signing out before the window opens. */
+export const signOut = (id, { time, position, earlyReason }) =>
   api
     .post(`duties/${id}/sign-out`, {
+      ...(earlyReason ? { early_reason: earlyReason } : {}),
       signout_time: time,
       signout_latitude: position?.latitude ?? null,
       signout_longitude: position?.longitude ?? null,

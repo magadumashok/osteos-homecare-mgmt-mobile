@@ -45,7 +45,7 @@ export default function DutyDetailScreen({ navigation, route }) {
     }
   }, [duty._id]);
 
-  const { busyId, confirmSignIn, confirmSignOut, notAttended } = useDutyActions((patch) => {
+  const { busyId, confirmSignIn, confirmSignOut, notAttended, earlySignOutModal } = useDutyActions((patch) => {
     setDuty((current) => ({ ...current, ...patch }));
     reload();
   });
@@ -203,6 +203,7 @@ export default function DutyDetailScreen({ navigation, route }) {
           if (await notAttended(duty, reason)) navigation.goBack();
         }}
       />
+      {earlySignOutModal}
     </AppScreen>
   );
 }

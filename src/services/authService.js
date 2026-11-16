@@ -38,6 +38,18 @@ export function uploadProfileImage(photo) {
     .then(unwrap);
 }
 
+/** My profile photo, Aadhaar card and police verification links. */
+export const myDocuments = () => api.get("account/documents").then(unwrap);
+
+/** `file` is { uri, name, mimeType }: a photo of the card or a PDF. */
+export function uploadAadhaarCard(file) {
+  const form = new FormData();
+  form.append("file", { uri: file.uri, name: file.name, type: file.mimeType });
+  return uploadApi
+    .post("account/aadhaar-card", form, { headers: { "Content-Type": "multipart/form-data" } })
+    .then(unwrap);
+}
+
 export const updateFirebaseToken = (token) =>
   api.put("account/firebase-token", { firebase_token: token });
 
