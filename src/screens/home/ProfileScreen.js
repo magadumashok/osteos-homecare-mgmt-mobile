@@ -19,25 +19,9 @@ import { myDocuments, uploadAadhaarCard, uploadProfileImage } from "../../servic
 import { setProfileImage } from "../../store/slices/authSlice";
 import { thunkLogout } from "../../store/thunks/authThunks";
 import { displayName, initials, roleLabel } from "../../utils/format";
-import { choosePhoto, pickFiles, pickPhoto } from "../../utils/photos";
+import { choosePhoto } from "../../utils/photos";
 
 const isPdf = (url) => /\.pdf($|\?)/i.test(url || "");
-
-/** Camera, gallery or a PDF (Android shows at most three buttons; tap outside to cancel). */
-function chooseDocument(title) {
-  return new Promise((resolve) => {
-    Alert.alert(
-      title,
-      "Take a clear photo of the card, or choose a PDF.",
-      [
-        { text: "Camera", onPress: () => pickPhoto("camera").then(resolve, () => resolve(null)) },
-        { text: "Gallery", onPress: () => pickPhoto("library").then(resolve, () => resolve(null)) },
-        { text: "PDF", onPress: () => pickFiles({ multiple: false }).then((files) => resolve(files[0] || null), () => resolve(null)) },
-      ],
-      { cancelable: true, onDismiss: () => resolve(null) },
-    );
-  });
-}
 
 /** One of my documents: status, view, and upload / replace. */
 function DocumentRow({ icon, label, url, busy, onUpload, onView }) {
@@ -98,7 +82,8 @@ export default function ProfileScreen({ navigation }) {
   const view = (url, caption) => (isPdf(url) ? Linking.openURL(url) : setViewing({ uri: url, caption }));
 
   const onUploadAadhaar = async () => {
-    const file = await chooseDocument("Aadhaar card");
+    // A photo of the card: it goes into the profile PDF patients receive.
+    const file = await choosePhoto("Aadhaar card photo");
     if (!file) return;
     setAadhaarBusy(true);
     try {
@@ -198,6 +183,11 @@ export default function ProfileScreen({ navigation }) {
             value={user?.specialization}
           />
           <Row icon="briefcase-outline" label="Experience" value={user?.experience} />
+          <Row
+            icon="checkmark-done-outline"
+            label="Tasks I can do"
+            value={Array.isArray(user?.care_skills) && user.care_skills.length ? user.care_skills.join(", ") : null}
+          />
           <Row icon="location-outline" label="Address" value={addressText} />
         </View>
 
