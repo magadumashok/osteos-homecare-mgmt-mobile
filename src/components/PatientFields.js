@@ -4,7 +4,7 @@ import { TextField } from "./Form";
 import { FilterChips } from "./Segmented";
 import SelectField from "./SelectField";
 import useReference from "../hooks/useReference";
-import { cities, packageFees, packageName, regions, servicePackages } from "../services/referenceService";
+import { cities, regions } from "../services/referenceService";
 import { SERVICE_OPTIONS, serviceChoice, serviceValue } from "../utils/services";
 import { colors } from "../theme";
 
@@ -36,7 +36,6 @@ export const BLANK_PATIENT = {
   source_of_contact: "",
   service: "",
   service_other: "",
-  service_package: "",
   fees: "",
   comments: "",
 };
@@ -66,7 +65,6 @@ export function patientPayload({ service_other: serviceOther, ...form }) {
  */
 export default function PatientFields({ form, onChange, isEdit = false }) {
   const countries = useReference("countriesByCode");
-  const [packages, setPackages] = useState([]);
   const [regionRows, setRegionRows] = useState([]);
   const [cityRows, setCityRows] = useState([]);
   const set = (key) => (value) => onChange({ ...form, [key]: value });
@@ -91,12 +89,6 @@ export default function PatientFields({ form, onChange, isEdit = false }) {
 
   const stateOptions = useMemo(() => namedOptions(regionRows, form.state), [regionRows, form.state]);
   const cityOptions = useMemo(() => namedOptions(cityRows, form.city), [cityRows, form.city]);
-
-  useEffect(() => {
-    servicePackages()
-      .then((list) => setPackages((list || []).filter((p) => packageName(p)).map((p) => ({ value: packageName(p), label: packageName(p), sub: String(packageFees(p) || ""), fees: packageFees(p) }))))
-      .catch(() => {});
-  }, []);
 
   return (
     <View style={styles.wrap}>
@@ -149,16 +141,6 @@ export default function PatientFields({ form, onChange, isEdit = false }) {
       {form.service === "other" && (
         <TextField label="Service name *" value={form.service_other || ""} onChangeText={set("service_other")} placeholder="e.g. Physiotherapy at home" />
       )}
-      <SelectField
-        label="Service package"
-        value={form.service_package}
-        options={packages}
-        allowClear
-        onChange={(value) => {
-          const chosen = packages.find((p) => p.value === value);
-          onChange({ ...form, service_package: value, fees: chosen?.fees != null ? String(chosen.fees) : form.fees });
-        }}
-      />
       <TextField label="Fees" value={String(form.fees ?? "")} onChangeText={set("fees")} keyboardType="decimal-pad" />
       <TextField label="Comments" value={form.comments || ""} onChangeText={set("comments")} multiline />
     </View>

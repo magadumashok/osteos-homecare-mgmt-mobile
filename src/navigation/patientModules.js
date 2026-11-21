@@ -11,7 +11,9 @@ export const PATIENT_MODULES = [
   { id: "medications", title: "Medications", subtitle: "Schedule and administer", icon: "medkit", palette: "orange", permissions: ["medications.view"], screen: "Medications" },
   { id: "prescriptions", title: "Prescriptions", subtitle: "Medicine and test", icon: "receipt", palette: "purple", permissions: ["prescriptions.view"], screen: "Prescriptions" },
   { id: "documents", title: "Documents", subtitle: "Reports, IDs and specimens", icon: "folder", palette: "indigo", permissions: ["documents.view"], screen: "Documents" },
-  { id: "services", title: "Service Package", subtitle: "Services given this visit", icon: "pricetags", palette: "amber", permissions: ["schedules.manage", "attendance.record"], screen: "ServicePackage", withDuty: true },
+  // Service Package is not used any more; uncomment to bring it back (the
+  // ServicePackage route is still in AppNavigator.js).
+  // { id: "services", title: "Service Package", subtitle: "Services given this visit", icon: "pricetags", palette: "amber", permissions: ["schedules.manage", "attendance.record"], screen: "ServicePackage", withDuty: true },
   { id: "consent", title: "Consent", subtitle: "Terms, consent and signature", icon: "create", palette: "teal", permissions: ["assessments.manage"], screen: "Consent" },
   { id: "schedules", title: "Schedules", subtitle: "Visits for this patient", icon: "calendar", palette: "green", permissions: ["schedules.view"], screen: "PatientSchedules" },
   { id: "discharge", title: "Discharge", subtitle: "Discharge this patient", icon: "exit", palette: "pink", permissions: ["discharge.manage"], screen: "DischargePatient" },

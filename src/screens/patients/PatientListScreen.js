@@ -90,7 +90,7 @@ export default function PatientListScreen({ navigation }) {
               badges={[
                 capitalize(item.gender),
                 item.age ? `${item.age} yrs` : null,
-                item.service_package,
+                item.service,
                 registered && item.assigned ? "Assigned to you" : null,
               ]}
               onPress={() => open(item)}

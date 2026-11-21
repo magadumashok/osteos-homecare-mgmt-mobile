@@ -62,7 +62,7 @@ export default function PatientHubScreen({ navigation, route }) {
             <Detail label="Gender / Age" value={[capitalize(patient.gender), patient.age && `${patient.age} yrs`].filter(Boolean).join(" · ")} />
             <Detail label="Mobile" value={patient.mobile} />
             <Detail label="Address" value={patient.address} />
-            <Detail label="Service package" value={patient.service_package} />
+            <Detail label="Service" value={patient.service} />
             <Detail label="Diagnosis" value={patient.diagnosis_name || patient.diagnosis} />
             <Detail label="Physician" value={patient.physician} />
           </View>

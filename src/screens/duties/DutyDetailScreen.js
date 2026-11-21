@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useState } from "react";
 import { Alert, Image, Linking, Platform, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSelector } from "react-redux";
@@ -7,7 +7,6 @@ import AppScreen from "../../components/AppScreen";
 import { PrimaryButton } from "../../components/Form";
 import NotAttendedModal from "../../components/NotAttendedModal";
 import useDutyActions, { dutyStatus, isActionable, signInHint } from "../../hooks/useDutyActions";
-import { patientActions } from "../../navigation/patientModules";
 import { addPresencePhoto, getDuty } from "../../services/dutyService";
 import { capitalize } from "../../utils/format";
 import { currentPosition } from "../../utils/location";
@@ -30,7 +29,7 @@ function Row({ icon, label, value }) {
 
 /** One visit: attendance buttons plus everything to record for the patient. */
 export default function DutyDetailScreen({ navigation, route }) {
-  const { permissions, user } = useSelector((s) => s.auth);
+  const { user } = useSelector((s) => s.auth);
   const [duty, setDuty] = useState(route.params.duty);
   const [skipping, setSkipping] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -52,18 +51,6 @@ export default function DutyDetailScreen({ navigation, route }) {
   const status = dutyStatus(duty);
   const actionable = isActionable(duty) && status.key !== "missed";
   const busy = busyId === duty._id;
-
-  const actions = useMemo(
-    () =>
-      patientActions({
-        permissions,
-        navigation,
-        username: duty.patient_id,
-        name: duty.patient_name,
-        duty,
-      }),
-    [permissions, navigation, duty],
-  );
 
   // Proof of the visit: while signed in to a visit, or on any day of a 24-hour stay (server checks too).
   const own = duty.staff_id === user?.username;
@@ -113,7 +100,7 @@ export default function DutyDetailScreen({ navigation, route }) {
           <Row icon="time-outline" label="Time" value={duty.live_in ? `Round the clock${duty.day_start_time ? ` from ${time12(duty.day_start_time)}` : ""}` : timeRange(duty.start_time, duty.end_time)} />
           <Row icon="list-outline" label="Care tasks" value={(duty.care_tasks || []).join(", ")} />
           <Row icon="briefcase-outline" label="Role" value={capitalize(duty.role)} />
-          <Row icon="pricetag-outline" label="Service package" value={duty.service_package} />
+          <Row icon="pricetag-outline" label="Service" value={duty.service} />
           <Row icon="car-outline" label="Driver" value={duty.driver} />
           <Row icon="log-in-outline" label="Signed in" value={duty.sign_in ? time12(duty.signin_time) : null} />
           <Row icon="log-out-outline" label="Signed out" value={duty.sign_out ? time12(duty.signout_time) : null} />
@@ -185,12 +172,11 @@ export default function DutyDetailScreen({ navigation, route }) {
             {
               id: "record",
               title: "Patient Record",
-              subtitle: "Details and history",
+              subtitle: "Notes, vitals, medications and more",
               icon: "person",
               palette: "teal",
               onPress: () => navigation.navigate("PatientHub", { username: duty.patient_id, name: duty.patient_name }),
             },
-            ...actions,
           ]}
         />
       </ScrollView>

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FlatList, StyleSheet, Text, View } from "react-native";
+import { FlatList, ScrollView, StyleSheet, Text, View } from "react-native";
 import AppScreen from "../../components/AppScreen";
 import { FilterChips } from "../../components/Segmented";
 import SelectField from "../../components/SelectField";
@@ -63,14 +63,22 @@ export default function AttendanceScreen({ route }) {
   return (
     <AppScreen title="Attendance" subtitle={member ? displayName(member) : undefined}>
       <View style={styles.top}>
-        <SelectField
-          label="Staff member"
-          value={member?.username}
-          options={options}
-          onChange={(username) => setMember(staff.find((m) => m.username === username) || null)}
-          placeholder="Choose a staff member"
-        />
-        {!!member && <FilterChips options={PERIODS} value={period} onChange={setPeriod} />}
+        {/* SelectField stretches (flex: 1) to share a row; in this column it
+            would be squeezed and the chips drawn over it, so it gets a row. */}
+        <View style={styles.selectRow}>
+          <SelectField
+            label="Staff member"
+            value={member?.username}
+            options={options}
+            onChange={(username) => setMember(staff.find((m) => m.username === username) || null)}
+            placeholder="Choose a staff member"
+          />
+        </View>
+        {!!member && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
+            <FilterChips options={PERIODS} value={period} onChange={setPeriod} />
+          </ScrollView>
+        )}
       </View>
       {!member ? (
         <EmptyState icon="time-outline" title="Choose a staff member" />
@@ -127,7 +135,9 @@ function DutyRow({ duty }) {
 }
 
 const styles = StyleSheet.create({
-  top: { padding: 16, paddingBottom: 4, gap: 12 },
+  top: { padding: 16, paddingBottom: 4, gap: 12, flexShrink: 0 },
+  selectRow: { flexDirection: "row" },
+  chips: { flexGrow: 0 },
   list: { padding: 16, paddingBottom: 40, gap: 12 },
   summary: { fontSize: 13, color: colors.textMuted, fontWeight: "600" },
   card: { backgroundColor: colors.surface, borderRadius: 16, padding: 14, gap: 4, ...shadow },

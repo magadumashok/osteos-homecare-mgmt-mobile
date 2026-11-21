@@ -16,12 +16,13 @@ import { colors } from "../../theme";
 const ROLE_FILTERS = [
   { value: "all", label: "All" },
   { value: "nurse", label: "Nurses" },
+  { value: "caretaker", label: "Caretakers" },
   { value: "physiotherapist", label: "Physios" },
   { value: "doctor", label: "Doctors" },
   { value: "transport", label: "Drivers" },
   { value: "other", label: "Other" },
 ];
-const MAIN_ROLES = ["nurse", "physiotherapist", "doctor", "transport"];
+const MAIN_ROLES = ["nurse", "caretaker", "physiotherapist", "doctor", "transport"];
 
 /** Old "View staff list": everyone in the homecare, with call and attendance. */
 export default function StaffListScreen({ navigation }) {
